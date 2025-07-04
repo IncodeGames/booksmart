@@ -457,3 +457,34 @@
         border: 0.5px solid rgba(255, 255, 255, 0.2);
     }
 }
+
+.back-button {
+    position: fixed;
+    top: 24px;
+    left: 24px;
+    z-index: 1000;
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: var(--white);
+    padding: 12px 20px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    backdrop-filter: blur(10px);
+}
+
+.back-button:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: translateY(-1px);
+}
+
+@media (max-width: 768px) {
+    .back-button {
+        top: 16px;
+        left: 16px;
+        padding: 10px 16px;
+        font-size: 13px;
+    }
+}

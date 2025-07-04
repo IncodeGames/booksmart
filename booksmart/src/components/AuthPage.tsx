@@ -1,22 +1,38 @@
-import { useState, useEffect } from 'react';
-import { supabase } from './supabase';
-import './components/RegistrationPage.css';
+import { useState, useEffect, FormEvent } from 'react';
+import { supabase } from '../supabase';
+import './styles/AuthPage.css';
 
-const RegistrationPage = () => {
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [confirmPassword, setConfirmPassword] = useState('');
-    const [loading, setLoading] = useState(false);
-    const [message, setMessage] = useState({ text: '', type: '' });
-    const [mode, setMode] = useState('signup'); // 'signup' or 'signin'
-    const [windowSize, setWindowSize] = useState({
+interface AuthPageProps {
+    onNavigateToLanding: () => void;
+}
+
+interface WindowSize {
+    width: number;
+    height: number;
+}
+
+interface Message {
+    text: string;
+    type: 'success' | 'error' | '';
+}
+
+type AuthMode = 'signup' | 'signin';
+type OAuthProvider = 'google' | 'apple';
+
+const AuthPage = ({ onNavigateToLanding }: AuthPageProps) => {
+    const [email, setEmail] = useState<string>('');
+    const [password, setPassword] = useState<string>('');
+    const [confirmPassword, setConfirmPassword] = useState<string>('');
+    const [loading, setLoading] = useState<boolean>(false);
+    const [message, setMessage] = useState<Message>({ text: '', type: '' });
+    const [mode, setMode] = useState<AuthMode>('signup');
+    const [windowSize, setWindowSize] = useState<WindowSize>({
         width: window.innerWidth,
         height: window.innerHeight
     });
 
-    // Handle window resize
     useEffect(() => {
-        const handleResize = () => {
+        const handleResize = (): void => {
             setWindowSize({
                 width: window.innerWidth,
                 height: window.innerHeight
@@ -27,7 +43,7 @@ const RegistrationPage = () => {
         return () => window.removeEventListener('resize', handleResize);
     }, []);
 
-    const validateForm = () => {
+    const validateForm = (): boolean => {
         if (!email) {
             setMessage({ text: 'Email is required', type: 'error' });
             return false;
@@ -51,7 +67,7 @@ const RegistrationPage = () => {
         return true;
     };
 
-    const handleEmailAuth = async (e) => {
+    const handleEmailAuth = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
         e.preventDefault();
         if (!validateForm()) return;
 
@@ -71,14 +87,14 @@ const RegistrationPage = () => {
                 if (error) throw error;
                 setMessage({ text: 'Login successful!', type: 'success' });
             }
-        } catch (error) {
+        } catch (error: any) {
             setMessage({ text: error.message, type: 'error' });
         } finally {
             setLoading(false);
         }
     };
 
-    const handleOAuthSignIn = async (provider) => {
+    const handleOAuthSignIn = async (provider: OAuthProvider): Promise<void> => {
         setLoading(true);
         setMessage({ text: '', type: '' });
 
@@ -90,25 +106,31 @@ const RegistrationPage = () => {
                 },
             });
             if (error) throw error;
-        } catch (error) {
+        } catch (error: any) {
             setMessage({ text: error.message, type: 'error' });
             setLoading(false);
         }
     };
 
-    const toggleMode = () => {
+    const toggleMode = (): void => {
         setMode(mode === 'signup' ? 'signin' : 'signup');
         setMessage({ text: '', type: '' });
     };
 
-    // Determine if we're in mobile/tablet view
-    const isMobile = windowSize.width <= 768;
-    const isTablet = windowSize.width <= 1024 && windowSize.width > 768;
+    const isMobile: boolean = windowSize.width <= 768;
+    const isTablet: boolean = windowSize.width <= 1024 && windowSize.width > 768;
 
     return (
         <div className="auth-fullscreen">
+            {/* Back Button */}
+            <button
+                className="back-button"
+                onClick={onNavigateToLanding}
+            >
+                ← Back to Home
+            </button>
+
             <div className="auth-background">
-                {/* Animated background elements */}
                 <div className="bg-shape shape-1"></div>
                 <div className="bg-shape shape-2"></div>
                 <div className="bg-shape shape-3"></div>
@@ -240,4 +262,4 @@ const RegistrationPage = () => {
     );
 };
 
-export default RegistrationPage;
+export default AuthPage;
