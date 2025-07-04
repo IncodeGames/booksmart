@@ -3,6 +3,7 @@ import { supabase } from './supabase';
 import LandingPage from './components/LandingPage.tsx';
 import RegistrationPage from './components/AuthPage.tsx';
 import Dashboard from './components/Dashboard.tsx';
+import Clients from './components/Clients.tsx';
 import './App.css';
 
 function App() {
@@ -49,6 +50,14 @@ function App() {
     setCurrentPage('landing');
   };
 
+  const navigateToDashboard = () => {
+    setCurrentPage('dashboard');
+  };
+
+  const navigateToClients = () => {
+    setCurrentPage('clients');
+  };
+
   const handleSignOut = async () => {
     await supabase.auth.signOut();
   };
@@ -70,7 +79,10 @@ function App() {
         <RegistrationPage onNavigateToLanding={navigateToLanding} />
       )}
       {currentPage === 'dashboard' && user && (
-        <Dashboard user={user} onSignOut={handleSignOut} />
+        <Dashboard user={user} onSignOut={handleSignOut} onNavigateToClients={navigateToClients} />
+      )}
+      {currentPage === 'clients' && user && (
+        <Clients user={user} onSignOut={handleSignOut} onNavigateToDashboard={navigateToDashboard} />
       )}
     </div>
   );

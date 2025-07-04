@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../supabase';
+import InvoiceTemplate from './InvoiceTemplate';
 import './styles/Dashboard.css';
 
 import {
@@ -25,6 +26,7 @@ interface User {
 interface DashboardProps {
     user: User;
     onSignOut: () => void;
+    onNavigateToClients?: () => void;
 }
 
 interface WindowSize {
@@ -68,7 +70,8 @@ interface InvoiceData {
     color: string;
 }
 
-const Dashboard = ({ user, onSignOut }: DashboardProps) => {
+const Dashboard = ({ user, onSignOut, onNavigateToClients }: DashboardProps) => {
+    const [currentView, setCurrentView] = useState<'dashboard' | 'invoice-template'>('dashboard');
     const [windowSize, setWindowSize] = useState<WindowSize>({
         width: window.innerWidth,
         height: window.innerHeight
@@ -193,6 +196,18 @@ const Dashboard = ({ user, onSignOut }: DashboardProps) => {
         { action: 'Database backup completed', time: '3 hours ago', type: 'system' },
     ];
 
+    const navigateToInvoiceTemplate = () => {
+        setCurrentView('invoice-template');
+    };
+
+    const navigateBackToDashboard = () => {
+        setCurrentView('dashboard');
+    };
+
+    if (currentView === 'invoice-template') {
+        return <InvoiceTemplate user={user} onBack={navigateBackToDashboard} />;
+    }
+
     return (
         <div className="dashboard">
             {/* Sidebar */}
@@ -217,13 +232,20 @@ const Dashboard = ({ user, onSignOut }: DashboardProps) => {
                         <span className="nav-icon">📊</span>
                         Dashboard
                     </a>
-                    <a href="#" className="nav-item">
-                        <span className="nav-icon">📁</span>
-                        Projects
-                    </a>
-                    <a href="#" className="nav-item">
+                    <a href="#" className="nav-item" onClick={() => onNavigateToClients()}>
                         <span className="nav-icon">👥</span>
-                        Team
+                        Clients
+                    </a>
+                    <a
+                        href="#"
+                        className="nav-item"
+                        onClick={(e) => {
+                            e.preventDefault();
+                            navigateToInvoiceTemplate();
+                        }}
+                    >
+                        <span className="nav-icon">📄</span>
+                        Invoice Templates
                     </a>
                     <a href="#" className="nav-item">
                         <span className="nav-icon">📈</span>
