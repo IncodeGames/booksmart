@@ -1,5 +1,7 @@
-import { useState, useEffect } from 'react';
-import { supabase } from '../supabase';
+import { useEffect } from 'react';
+import { useDashboardStore } from '../stores/dashboardStore';
+import { useNavigationStore } from '../stores/navigationStore';
+import { useWindowSize } from '../hooks/useWindowSize';
 import InvoiceTemplate from './InvoiceTemplate';
 import './styles/Dashboard.css';
 
@@ -27,184 +29,97 @@ interface DashboardProps {
     user: User;
     onSignOut: () => void;
     onNavigateToClients?: () => void;
-}
-
-interface WindowSize {
-    width: number;
-    height: number;
+    onNavigateToInvoices?: () => void;
 }
 
 interface Stat {
     title: string;
     value: string;
-    change: string;
-    trend: 'up' | 'down';
 }
 
-interface ActivityItem {
-    action: string;
-    time: string;
-    type: 'user' | 'deployment' | 'payment' | 'system';
-}
+const Dashboard = ({ user, onSignOut, onNavigateToClients, onNavigateToInvoices }: DashboardProps) => {
+    const windowSize = useWindowSize();
 
-enum InvoiceType {
-    UNPAID = 'Unpaid',
-    PAID = 'Paid'
-}
+    // Zustand stores
+    const {
+        dashboardData,
+        revenueExpenseData,
+        profitData,
+        invoiceData,
+        loading,
+        error,
+        fetchDashboardData
+    } = useDashboardStore();
 
-// Chart data interfaces
-interface RevenueExpenseData {
-    month: string;
-    revenue: number;
-    expenses: number;
-}
-
-interface ProfitData {
-    month: string;
-    profit: number;
-}
-
-interface InvoiceData {
-    name: string;
-    value: number;
-    color: string;
-}
-
-const Dashboard = ({ user, onSignOut, onNavigateToClients }: DashboardProps) => {
-    const [currentView, setCurrentView] = useState<'dashboard' | 'invoice-template'>('dashboard');
-    const [windowSize, setWindowSize] = useState<WindowSize>({
-        width: window.innerWidth,
-        height: window.innerHeight
-    });
-    const [sidebarOpen, setSidebarOpen] = useState<boolean>(false);
-
-    // Chart data states
-    const [revenueExpenseData, setRevenueExpenseData] = useState<RevenueExpenseData[]>([]);
-    const [profitData, setProfitData] = useState<ProfitData[]>([]);
-    const [invoiceData, setInvoiceData] = useState<InvoiceData[]>([]);
-    const [loading, setLoading] = useState<boolean>(true);
+    const {
+        currentDashboardView,
+        sidebarOpen,
+        setCurrentDashboardView,
+        setSidebarOpen
+    } = useNavigationStore();
 
     useEffect(() => {
-        const handleResize = (): void => {
-            setWindowSize({
-                width: window.innerWidth,
-                height: window.innerHeight
-            });
-        };
-
-        window.addEventListener('resize', handleResize);
-        return () => window.removeEventListener('resize', handleResize);
-    }, []);
-
-    // Fetch data from Supabase
-    useEffect(() => {
-        const fetchChartData = async () => {
-            try {
-                setLoading(true);
-
-                // Fetch revenue and expense data
-                const { data: revenueExpenses, error: reError } = await supabase
-                    .from('financial_data')
-                    .select('month, revenue, expenses')
-                    .order('month');
-
-                if (reError) throw reError;
-
-                const profits: ProfitData[] = [];
-                for (let i = 0; i < revenueExpenses.length; i++) {
-                    const profitData = {
-                        month: revenueExpenses[i].month,
-                        profit: revenueExpenses[i].revenue - revenueExpenses[i].expenses
-                    }
-                    profits.push(profitData);
-                }
-
-                // Fetch invoice data
-                const { data: invoices, error: invoiceError } = await supabase
-                    .from('invoices')
-                    .select('invoice_status, amount');
-
-                if (invoiceError) throw invoiceError;
-
-                // Process data
-                setRevenueExpenseData(revenueExpenses || []);
-                setProfitData(profits || []);
-
-                // Process invoice data for pie chart
-                if (invoices) {
-                    const outstanding = invoices
-                        .filter(inv => inv.invoice_status === InvoiceType.UNPAID)
-                        .reduce((sum, inv) => sum + inv.amount, 0);
-
-                    const paid = invoices
-                        .filter(inv => inv.invoice_status === InvoiceType.PAID)
-                        .reduce((sum, inv) => sum + inv.amount, 0);
-
-                    setInvoiceData([
-                        { name: 'Outstanding', value: outstanding, color: '#ff6b6b' },
-                        { name: 'Paid', value: paid, color: '#4ecdc4' }
-                    ]);
-                }
-
-            } catch (error) {
-                console.error('Error fetching chart data:', error);
-
-                // Fallback to sample data if Supabase fails
-                setRevenueExpenseData([
-                    { month: 'Jan', revenue: 12000, expenses: 8000 },
-                    { month: 'Feb', revenue: 15000, expenses: 9000 },
-                    { month: 'Mar', revenue: 18000, expenses: 10000 },
-                    { month: 'Apr', revenue: 22000, expenses: 12000 },
-                    { month: 'May', revenue: 25000, expenses: 13000 },
-                    { month: 'Jun', revenue: 28000, expenses: 14000 }
-                ]);
-
-                setProfitData([
-                    { month: 'Jan', profit: 4000 },
-                    { month: 'Feb', profit: 6000 },
-                    { month: 'Mar', profit: 8000 },
-                    { month: 'Apr', profit: 10000 },
-                    { month: 'May', profit: 12000 },
-                    { month: 'Jun', profit: 14000 }
-                ]);
-
-                setInvoiceData([
-                    { name: 'Outstanding', value: 45000, color: '#ff6b6b' },
-                    { name: 'Paid', value: 125000, color: '#4ecdc4' }
-                ]);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchChartData();
-    }, []);
+        fetchDashboardData();
+    }, [fetchDashboardData]);
 
     const isMobile: boolean = windowSize.width <= 768;
 
-    const stats: Stat[] = [
-        { title: 'Total Projects', value: '12', change: '+2.5%', trend: 'up' },
-        { title: 'Active Users', value: '1,234', change: '+12.3%', trend: 'up' },
-        { title: 'Revenue', value: '$45.2K', change: '+8.1%', trend: 'up' },
-        { title: 'Conversion', value: '3.2%', change: '-1.2%', trend: 'down' },
-    ];
+    const formatCurrency = (amount: number): string => {
+        return new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: 'USD',
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0,
+        }).format(amount);
+    };
 
-    const recentActivity: ActivityItem[] = [
-        { action: 'New user registration', time: '2 minutes ago', type: 'user' },
-        { action: 'Project deployed', time: '15 minutes ago', type: 'deployment' },
-        { action: 'Payment received', time: '1 hour ago', type: 'payment' },
-        { action: 'Database backup completed', time: '3 hours ago', type: 'system' },
+    const stats: Stat[] = [
+        {
+            title: 'Total Revenue',
+            value: formatCurrency(dashboardData.totalRevenue),
+        },
+        {
+            title: 'Total Expenses',
+            value: formatCurrency(dashboardData.totalExpenses),
+        },
+        {
+            title: 'Net Profit',
+            value: formatCurrency(dashboardData.totalProfit),
+        },
+        {
+            title: 'Total Invoices',
+            value: dashboardData.totalInvoices.toString(),
+        },
     ];
 
     const navigateToInvoiceTemplate = () => {
-        setCurrentView('invoice-template');
+        setCurrentDashboardView('invoice-template');
     };
 
     const navigateBackToDashboard = () => {
-        setCurrentView('dashboard');
+        setCurrentDashboardView('dashboard');
     };
 
-    if (currentView === 'invoice-template') {
+    const EmptyState = ({ title, description }: { title: string; description: string }) => (
+        <div className="empty-state">
+            <div className="empty-state-icon">📊</div>
+            <h3>{title}</h3>
+            <p>{description}</p>
+        </div>
+    );
+
+    const ErrorState = ({ message, onRetry }: { message: string; onRetry: () => void }) => (
+        <div className="error-state">
+            <div className="error-state-icon">⚠️</div>
+            <h3>Unable to load data</h3>
+            <p>{message}</p>
+            <button className="retry-button" onClick={onRetry}>
+                Try Again
+            </button>
+        </div>
+    );
+
+    if (currentDashboardView === 'invoice-template') {
         return <InvoiceTemplate user={user} onBack={navigateBackToDashboard} />;
     }
 
@@ -235,6 +150,17 @@ const Dashboard = ({ user, onSignOut, onNavigateToClients }: DashboardProps) => 
                     <a href="#" className="nav-item" onClick={() => onNavigateToClients()}>
                         <span className="nav-icon">👥</span>
                         Clients
+                    </a>
+                    <a
+                        href="#"
+                        className="nav-item"
+                        onClick={(e) => {
+                            e.preventDefault();
+                            onNavigateToInvoices?.();
+                        }}
+                    >
+                        <span className="nav-icon">🧾</span>
+                        Invoices
                     </a>
                     <a
                         href="#"
@@ -294,8 +220,8 @@ const Dashboard = ({ user, onSignOut, onNavigateToClients }: DashboardProps) => 
                     {/* Welcome Section */}
                     <section className="welcome-section">
                         <div className="welcome-card">
-                            <h2>Welcome back!</h2>
-                            <p>Here's what's happening with your projects today.</p>
+                            <h2>Financial Dashboard</h2>
+                            <p>Track your business performance and financial health.</p>
                         </div>
                     </section>
 
@@ -306,9 +232,6 @@ const Dashboard = ({ user, onSignOut, onNavigateToClients }: DashboardProps) => 
                                 <div key={index} className="stat-card">
                                     <div className="stat-header">
                                         <h3>{stat.title}</h3>
-                                        <span className={`stat-change ${stat.trend}`}>
-                                            {stat.change}
-                                        </span>
                                     </div>
                                     <div className="stat-value">{stat.value}</div>
                                 </div>
@@ -316,141 +239,184 @@ const Dashboard = ({ user, onSignOut, onNavigateToClients }: DashboardProps) => 
                         </div>
                     </section>
 
+                    {/* Error State */}
+                    {error.hasError && (
+                        <section className="error-section">
+                            <ErrorState
+                                message={error.message}
+                                onRetry={fetchDashboardData}
+                            />
+                        </section>
+                    )}
+
                     {/* Charts Section */}
-                    <section className="charts-section">
-                        <div className="charts-grid">
-                            {/* Revenue vs Expenses Bar Chart */}
-                            <div className="chart-card">
-                                <div className="card-header">
-                                    <h3>Revenue vs Expenses</h3>
+                    {!error.hasError && (
+                        <section className="charts-section">
+                            <div className="charts-grid">
+                                {/* Revenue vs Expenses Bar Chart */}
+                                <div className="chart-card">
+                                    <div className="card-header">
+                                        <div className="chart-title-section">
+                                            <h3>Revenue vs Expenses</h3>
+                                        </div>
+                                    </div>
+                                    <div className="chart-container">
+                                        <div className="chart-totals">
+                                            <div className="total-revenue">
+                                                Revenue: {formatCurrency(dashboardData.totalRevenue)}
+                                            </div>
+                                            <div className="total-expenses">
+                                                Expenses: {formatCurrency(dashboardData.totalExpenses)}
+                                            </div>
+                                        </div>
+                                        {loading ? (
+                                            <div className="chart-loading">
+                                                <div className="loading-spinner"></div>
+                                                <span>Loading financial data...</span>
+                                            </div>
+                                        ) : revenueExpenseData.length === 0 ? (
+                                            <EmptyState
+                                                title="No Financial Data"
+                                                description="Add revenue and expense records to see your financial overview."
+                                            />
+                                        ) : (
+                                            <ResponsiveContainer width="100%" height={300}>
+                                                <BarChart data={revenueExpenseData}>
+                                                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                                                    <XAxis dataKey="month" stroke="#6b7280" />
+                                                    <YAxis stroke="#6b7280" />
+                                                    <Tooltip
+                                                        formatter={(value: any) => [formatCurrency(Number(value)), '']}
+                                                        contentStyle={{
+                                                            backgroundColor: 'white',
+                                                            border: '1px solid #e5e7eb',
+                                                            borderRadius: '8px',
+                                                            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                                                        }}
+                                                    />
+                                                    <Legend />
+                                                    <Bar dataKey="revenue" fill="#5BAF7C" name="Revenue" radius={[4, 4, 0, 0]} />
+                                                    <Bar dataKey="expenses" fill="#AF5A5C" name="Expenses" radius={[4, 4, 0, 0]} />
+                                                </BarChart>
+                                            </ResponsiveContainer>
+                                        )}
+                                    </div>
                                 </div>
-                                <div className="chart-container">
-                                    {loading ? (
-                                        <div className="chart-loading">Loading...</div>
-                                    ) : (
-                                        <ResponsiveContainer width="100%" height={300}>
-                                            <BarChart data={revenueExpenseData}>
-                                                <CartesianGrid strokeDasharray="3 3" />
-                                                <XAxis dataKey="month" />
-                                                <YAxis />
-                                                <Tooltip formatter={(value) => [`$${value.toLocaleString()}`, '']} />
-                                                <Legend />
-                                                <Bar dataKey="revenue" fill="#4ecdc4" name="Revenue" />
-                                                <Bar dataKey="expenses" fill="#ff6b6b" name="Expenses" />
-                                            </BarChart>
-                                        </ResponsiveContainer>
-                                    )}
-                                </div>
-                            </div>
 
-                            {/* Total Profit Area Chart */}
-                            <div className="chart-card">
-                                <div className="card-header">
-                                    <h3>Total Profit Trend</h3>
+                                {/* Total Profit Area Chart */}
+                                <div className="chart-card">
+                                    <div className="card-header">
+                                        <div className="chart-title-section">
+                                            <h3>Profit Trend</h3>
+                                            <div className="chart-totals">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="chart-container">
+                                        <div className="total-profit">
+                                            Total Profit: {formatCurrency(dashboardData.totalProfit)}
+                                        </div>
+                                        {loading ? (
+                                            <div className="chart-loading">
+                                                <div className="loading-spinner"></div>
+                                                <span>Loading profit data...</span>
+                                            </div>
+                                        ) : profitData.length === 0 ? (
+                                            <EmptyState
+                                                title="No Profit Data"
+                                                description="Profit calculations will appear once you have revenue and expense data."
+                                            />
+                                        ) : (
+                                            <ResponsiveContainer width="100%" height={300}>
+                                                <AreaChart data={profitData}>
+                                                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                                                    <XAxis dataKey="month" stroke="#6b7280" />
+                                                    <YAxis stroke="#6b7280" />
+                                                    <Tooltip
+                                                        formatter={(value: any) => [formatCurrency(Number(value)), 'Profit']}
+                                                        contentStyle={{
+                                                            backgroundColor: 'white',
+                                                            border: '1px solid #e5e7eb',
+                                                            borderRadius: '8px',
+                                                            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                                                        }}
+                                                    />
+                                                    <Area
+                                                        type="monotone"
+                                                        dataKey="profit"
+                                                        stroke="#5BAF7C"
+                                                        fill="#5BAF7C"
+                                                        fillOpacity={0.3}
+                                                        strokeWidth={3}
+                                                    />
+                                                </AreaChart>
+                                            </ResponsiveContainer>
+                                        )}
+                                    </div>
                                 </div>
-                                <div className="chart-container">
-                                    {loading ? (
-                                        <div className="chart-loading">Loading...</div>
-                                    ) : (
-                                        <ResponsiveContainer width="100%" height={300}>
-                                            <AreaChart data={profitData}>
-                                                <CartesianGrid strokeDasharray="3 3" />
-                                                <XAxis dataKey="month" />
-                                                <YAxis />
-                                                <Tooltip formatter={(value) => [`$${value.toLocaleString()}`, 'Profit']} />
-                                                <Area
-                                                    type="monotone"
-                                                    dataKey="profit"
-                                                    stroke="#8884d8"
-                                                    fill="#8884d8"
-                                                    fillOpacity={0.6}
-                                                />
-                                            </AreaChart>
-                                        </ResponsiveContainer>
-                                    )}
-                                </div>
-                            </div>
 
-                            {/* Invoice Status Pie Chart */}
-                            <div className="chart-card">
-                                <div className="card-header">
-                                    <h3>Invoice Status</h3>
-                                </div>
-                                <div className="chart-container">
-                                    {loading ? (
-                                        <div className="chart-loading">Loading...</div>
-                                    ) : (
-                                        <ResponsiveContainer width="100%" height={300}>
-                                            <PieChart>
-                                                <Pie
-                                                    data={invoiceData}
-                                                    cx="50%"
-                                                    cy="50%"
-                                                    labelLine={false}
-                                                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                                                    outerRadius={80}
-                                                    fill="#8884d8"
-                                                    dataKey="value"
-                                                >
-                                                    {invoiceData.map((entry, index) => (
-                                                        <Cell key={`cell-${index}`} fill={entry.color} />
-                                                    ))}
-                                                </Pie>
-                                                <Tooltip formatter={(value) => [`$${value.toLocaleString()}`, '']} />
-                                                <Legend />
-                                            </PieChart>
-                                        </ResponsiveContainer>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                    </section>
-
-                    {/* Content Grid */}
-                    <section className="content-section">
-                        <div className="content-grid">
-                            {/* Chart Card */}
-                            <div className="content-card chart-card">
-                                <div className="card-header">
-                                    <h3>Analytics Overview</h3>
-                                    <button className="card-action">View All</button>
-                                </div>
-                                <div className="chart-container">
-                                    <div className="chart-placeholder">
-                                        {[...Array(7)].map((_, i) => (
-                                            <div
-                                                key={i}
-                                                className="chart-bar"
-                                                style={{
-                                                    height: `${Math.random() * 80 + 20}%`,
-                                                    animationDelay: `${i * 0.1}s`
-                                                }}
-                                            ></div>
-                                        ))}
+                                {/* Invoice Status Pie Chart */}
+                                <div className="chart-card">
+                                    <div className="card-header">
+                                        <div className="chart-title-section">
+                                            <h3>Invoice Status</h3>
+                                        </div>
+                                    </div>
+                                    <div className="chart-container">
+                                        <div className="chart-totals">
+                                            <div className="total-invoices">
+                                                Total: {dashboardData.totalInvoices} invoices
+                                            </div>
+                                            <div className="invoice-amounts">
+                                                Paid: {formatCurrency(dashboardData.paidAmount)} |
+                                                Outstanding: {formatCurrency(dashboardData.unpaidAmount)}
+                                            </div>
+                                        </div>
+                                        {loading ? (
+                                            <div className="chart-loading">
+                                                <div className="loading-spinner"></div>
+                                                <span>Loading invoice data...</span>
+                                            </div>
+                                        ) : invoiceData.length === 0 || dashboardData.totalInvoices === 0 ? (
+                                            <EmptyState
+                                                title="No Invoices"
+                                                description="Create your first invoice to track payment status and amounts."
+                                            />
+                                        ) : (
+                                            <ResponsiveContainer width="100%" height={280}>
+                                                <PieChart>
+                                                    <Pie
+                                                        data={invoiceData}
+                                                        cx="50%"
+                                                        cy="50%"
+                                                        labelLine={false}
+                                                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                                                        outerRadius={80}
+                                                        fill="#8884d8"
+                                                        dataKey="value"
+                                                    >
+                                                        {invoiceData.map((entry, index) => (
+                                                            <Cell key={`cell-${index}`} fill={entry.color} />
+                                                        ))}
+                                                    </Pie>
+                                                    <Tooltip
+                                                        formatter={(value: any) => [formatCurrency(Number(value)), '']}
+                                                        contentStyle={{
+                                                            backgroundColor: 'white',
+                                                            border: '1px solid #e5e7eb',
+                                                            borderRadius: '8px',
+                                                            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                                                        }}
+                                                    />
+                                                    <Legend />
+                                                </PieChart>
+                                            </ResponsiveContainer>
+                                        )}
                                     </div>
                                 </div>
                             </div>
-
-                            {/* Activity Card */}
-                            <div className="content-card activity-card">
-                                <div className="card-header">
-                                    <h3>Recent Activity</h3>
-                                    <button className="card-action">View All</button>
-                                </div>
-                                <div className="activity-list">
-                                    {recentActivity.map((item, index) => (
-                                        <div key={index} className="activity-item">
-                                            <div className={`activity-icon ${item.type}`}></div>
-                                            <div className="activity-content">
-                                                <p>{item.action}</p>
-                                                <span className="activity-time">{item.time}</span>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
-                    </section>
+                        </section>
+                    )}
                 </div>
             </main>
 

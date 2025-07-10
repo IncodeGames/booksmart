@@ -10,10 +10,14 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@pdfme/common": "^5.4.1",
+    "@pdfme/generator": "^5.4.1",
+    "@pdfme/ui": "^5.4.1",
     "@supabase/supabase-js": "^2.50.2",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "recharts": "^3.0.2"
+    "recharts": "^3.0.2",
+    "zustand": "^5.0.6"
   },
   "devDependencies": {
     "@eslint/js": "^9.29.0",

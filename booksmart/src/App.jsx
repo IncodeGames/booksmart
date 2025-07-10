@@ -1,46 +1,64 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { supabase } from './supabase';
+import { useAuthStore } from './stores/authStore';
+import { useNavigationStore } from './stores/navigationStore';
 import LandingPage from './components/LandingPage.tsx';
 import RegistrationPage from './components/AuthPage.tsx';
+import ProfileSetup from './components/ProfileSetup.tsx';
 import Dashboard from './components/Dashboard.tsx';
 import Clients from './components/Clients.tsx';
+import Invoices from './components/Invoices.tsx';
 import './App.css';
 
 function App() {
-  const [currentPage, setCurrentPage] = useState('landing');
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const { user, loading, hasProfile, setUser, setLoading, setHasProfile, signOut, checkProfile } = useAuthStore();
+  const { currentPage, setCurrentPage } = useNavigationStore();
 
   useEffect(() => {
     // Get initial session
     const getSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       setUser(session?.user ?? null);
-      setLoading(false);
 
-      // If user is logged in, go to dashboard
       if (session?.user) {
-        setCurrentPage('dashboard');
+        const profileExists = await checkProfile(session.user.id);
+
+        if (profileExists) {
+          setCurrentPage('dashboard');
+        } else {
+          setCurrentPage('profile-setup');
+        }
       }
+
+      setLoading(false);
     };
 
     getSession();
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        setUser(session?.user ?? null);
+      (event, session) => {
+        setTimeout(async () => {
+          setUser(session?.user ?? null);
 
-        if (event === 'SIGNED_IN') {
-          setCurrentPage('dashboard');
-        } else if (event === 'SIGNED_OUT') {
-          setCurrentPage('landing');
-        }
+          if (event === 'SIGNED_IN') {
+            const profileExists = await checkProfile(session.user.id);
+
+            if (profileExists) {
+              setCurrentPage('dashboard');
+            } else {
+              setCurrentPage('profile-setup');
+            }
+          } else if (event === 'SIGNED_OUT') {
+            setCurrentPage('landing');
+            setHasProfile(false);
+          }
+        }, 0)
       }
     );
 
     return () => subscription?.unsubscribe();
-  }, []);
+  }, [setUser, setLoading, setHasProfile, setCurrentPage, checkProfile]);
 
   const navigateToAuth = () => {
     setCurrentPage('auth');
@@ -58,8 +76,13 @@ function App() {
     setCurrentPage('clients');
   };
 
-  const handleSignOut = async () => {
-    await supabase.auth.signOut();
+  const navigateToInvoices = () => {
+    setCurrentPage('invoices');
+  };
+
+  const handleProfileSetupComplete = () => {
+    setHasProfile(true);
+    setCurrentPage('dashboard');
   };
 
   if (loading) {
@@ -78,11 +101,25 @@ function App() {
       {currentPage === 'auth' && (
         <RegistrationPage onNavigateToLanding={navigateToLanding} />
       )}
-      {currentPage === 'dashboard' && user && (
-        <Dashboard user={user} onSignOut={handleSignOut} onNavigateToClients={navigateToClients} />
+      {currentPage === 'profile-setup' && user && (
+        <ProfileSetup
+          user={user}
+          onComplete={handleProfileSetupComplete}
+        />
+      )}
+      {currentPage === 'dashboard' && user && hasProfile && (
+        <Dashboard
+          user={user}
+          onSignOut={signOut}
+          onNavigateToClients={navigateToClients}
+          onNavigateToInvoices={navigateToInvoices}
+        />
       )}
       {currentPage === 'clients' && user && (
-        <Clients user={user} onSignOut={handleSignOut} onNavigateToDashboard={navigateToDashboard} />
+        <Clients user={user} onSignOut={signOut} onNavigateToDashboard={navigateToDashboard} />
+      )}
+      {currentPage === 'invoices' && user && (
+        <Invoices user={user} onSignOut={signOut} onNavigateToDashboard={navigateToDashboard} />
       )}
     </div>
   );

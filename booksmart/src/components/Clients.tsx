@@ -71,7 +71,7 @@ const Clients = ({ user, onSignOut, onNavigateToDashboard }: ClientsProps) => {
                         .from('invoices')
                         .select('amount')
                         .eq('client_id', client.id)
-                        .eq('invoice_status', 'Unpaid');
+                        .eq('invoice_status', 'unpaid');
 
                     if (invoiceError) {
                         console.error('Error fetching invoices for client:', client.id, invoiceError);
