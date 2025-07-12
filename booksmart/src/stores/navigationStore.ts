@@ -1,6 +1,5 @@
 import { create } from 'zustand';
-
-type Page = 'landing' | 'auth' | 'profile-setup' | 'dashboard' | 'clients' | 'invoices' | 'settings';
+type Page = 'landing' | 'auth' | 'profile-setup' | 'dashboard' | 'clients' | 'invoices' | 'time-tracking';
 type DashboardView = 'dashboard' | 'invoice-template';
 
 interface NavigationState {

@@ -9,6 +9,7 @@ import Dashboard from './components/Dashboard.tsx';
 import Clients from './components/Clients.tsx';
 import Invoices from './components/Invoices.tsx';
 import Settings from './components/Settings.tsx';
+import TimeTracking from './components/TimeTracking.tsx';
 import './App.css';
 
 function App() {
@@ -73,18 +74,6 @@ function App() {
     setCurrentPage('dashboard');
   };
 
-  const navigateToClients = () => {
-    setCurrentPage('clients');
-  };
-
-  const navigateToInvoices = () => {
-    setCurrentPage('invoices');
-  };
-
-  const navigateToSettings = () => {
-    setCurrentPage('settings');
-  };
-
   const handleProfileSetupComplete = () => {
     setHasProfile(true);
     setCurrentPage('dashboard');
@@ -116,9 +105,7 @@ function App() {
         <Dashboard
           user={user}
           onSignOut={signOut}
-          onNavigateToClients={navigateToClients}
-          onNavigateToInvoices={navigateToInvoices}
-          onNavigateToSettings={navigateToSettings}
+          onNavigate={setCurrentPage}
         />
       )}
       {currentPage === 'clients' && user && (
@@ -129,6 +116,9 @@ function App() {
       )}
       {currentPage === 'settings' && user && (
         <Settings user={user} onSignOut={signOut} onNavigateToDashboard={navigateToDashboard} />
+      )}
+      {currentPage === 'time-tracking' && user && (
+        <TimeTracking user={user} onSignOut={signOut} onNavigateToDashboard={navigateToDashboard} />
       )}
     </div>
   );
