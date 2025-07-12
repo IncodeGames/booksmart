@@ -37,7 +37,7 @@ interface Stat {
     value: string;
 }
 
-const Dashboard = ({ user, onSignOut, onNavigateToClients, onNavigateToInvoices }: DashboardProps) => {
+const Dashboard = ({ user, onSignOut, onNavigateToClients, onNavigateToInvoices, onNavigateToSettings }: DashboardProps) => {
     const windowSize = useWindowSize();
 
     // Zustand stores
@@ -177,7 +177,7 @@ const Dashboard = ({ user, onSignOut, onNavigateToClients, onNavigateToInvoices 
                         <span className="nav-icon">📈</span>
                         Analytics
                     </a>
-                    <a href="#" className="nav-item">
+                    <a href="#" className="nav-item" onClick={() => onNavigateToSettings()}>
                         <span className="nav-icon">⚙️</span>
                         Settings
                     </a>

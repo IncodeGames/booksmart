@@ -8,6 +8,7 @@ import ProfileSetup from './components/ProfileSetup.tsx';
 import Dashboard from './components/Dashboard.tsx';
 import Clients from './components/Clients.tsx';
 import Invoices from './components/Invoices.tsx';
+import Settings from './components/Settings.tsx';
 import './App.css';
 
 function App() {
@@ -80,6 +81,10 @@ function App() {
     setCurrentPage('invoices');
   };
 
+  const navigateToSettings = () => {
+    setCurrentPage('settings');
+  };
+
   const handleProfileSetupComplete = () => {
     setHasProfile(true);
     setCurrentPage('dashboard');
@@ -113,6 +118,7 @@ function App() {
           onSignOut={signOut}
           onNavigateToClients={navigateToClients}
           onNavigateToInvoices={navigateToInvoices}
+          onNavigateToSettings={navigateToSettings}
         />
       )}
       {currentPage === 'clients' && user && (
@@ -120,6 +126,9 @@ function App() {
       )}
       {currentPage === 'invoices' && user && (
         <Invoices user={user} onSignOut={signOut} onNavigateToDashboard={navigateToDashboard} />
+      )}
+      {currentPage === 'settings' && user && (
+        <Settings user={user} onSignOut={signOut} onNavigateToDashboard={navigateToDashboard} />
       )}
     </div>
   );

@@ -13,6 +13,34 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Dark Mode Variables */
+:root.dark-mode {
+  --primary-color: #6366f1;
+  --primary-hover: #5855eb;
+  --primary-light: #1e1b4b;
+  --text-color: #f9fafb;
+  --text-light: #d1d5db;
+  --text-muted: #9ca3af;
+  --white: #1f2937;
+  --background: #111827;
+  --background-secondary: #1f2937;
+  --border-color: #374151;
+}
+
+/* Color Blind Mode Variables */
+:root.color-blind-mode {
+  --profit-color: #0ea5e9;
+  /* Blue instead of green */
+  --profit-light: #e0f2fe;
+  --expense-color: #f97316;
+  /* Orange instead of red */
+  --expense-light: #fff7ed;
+  --success-color: #0ea5e9;
+  --warning-color: #8b5cf6;
+  /* Purple instead of yellow */
+  --error-color: #f97316;
+}
+
 a {
   font-weight: 500;
   color: #646cff;
