@@ -28,8 +28,7 @@ interface User {
 interface DashboardProps {
     user: User;
     onSignOut: () => void;
-    onNavigateToClients?: () => void;
-    onNavigateToInvoices?: () => void;
+    onNavigate?: (string) => void;
 }
 
 interface Stat {
@@ -37,7 +36,7 @@ interface Stat {
     value: string;
 }
 
-const Dashboard = ({ user, onSignOut, onNavigateToClients, onNavigateToInvoices }: DashboardProps) => {
+const Dashboard = ({ user, onSignOut, onNavigate }: DashboardProps) => {
     const windowSize = useWindowSize();
 
     // Zustand stores
@@ -147,7 +146,12 @@ const Dashboard = ({ user, onSignOut, onNavigateToClients, onNavigateToInvoices 
                         <span className="nav-icon">📊</span>
                         Dashboard
                     </a>
-                    <a href="#" className="nav-item" onClick={() => onNavigateToClients()}>
+                    <a
+                        href="#"
+                        className="nav-item"
+                        onClick={(e) => {
+                            onNavigate?.('clients')
+                        }}>
                         <span className="nav-icon">👥</span>
                         Clients
                     </a>
@@ -156,7 +160,7 @@ const Dashboard = ({ user, onSignOut, onNavigateToClients, onNavigateToInvoices 
                         className="nav-item"
                         onClick={(e) => {
                             e.preventDefault();
-                            onNavigateToInvoices?.();
+                            onNavigate?.('invoices');
                         }}
                     >
                         <span className="nav-icon">🧾</span>
@@ -172,6 +176,15 @@ const Dashboard = ({ user, onSignOut, onNavigateToClients, onNavigateToInvoices 
                     >
                         <span className="nav-icon">📄</span>
                         Invoice Templates
+                    </a>
+                    <a
+                        href="#"
+                        className="nav-item"
+                        onClick={(e) => {
+                            onNavigate?.('time-tracking')
+                        }}>
+                        <span className="nav-icon">🕓</span>
+                        Time Tracking
                     </a>
                     <a href="#" className="nav-item">
                         <span className="nav-icon">📈</span>

@@ -1,0 +1,289 @@
+.time-entries-list {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(20px);
+    border-radius: 24px;
+    padding: 2rem;
+    margin-bottom: 8rem;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.time-entries-list h2 {
+    color: white;
+    margin-bottom: 2rem;
+    font-size: 1.75rem;
+    font-weight: 700;
+    text-align: center;
+    position: relative;
+}
+
+.time-entries-list h2::after {
+    content: '';
+    position: absolute;
+    bottom: -0.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60px;
+    height: 3px;
+    background: linear-gradient(90deg, #ffd700, #ffed4e);
+    border-radius: 2px;
+}
+
+.entries-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1.5rem;
+    margin-top: 2rem;
+}
+
+.time-entry-card {
+    background: white;
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    animation: cardSlideUp 0.6s ease-out;
+    position: relative;
+    overflow: hidden;
+}
+
+.time-entry-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #4CAF50, #45a049);
+    transform: scaleX(0);
+    transition: transform 0.3s ease;
+}
+
+.time-entry-card:hover::before {
+    transform: scaleX(1);
+}
+
+@keyframes cardSlideUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.time-entry-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+}
+
+.entry-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.25rem;
+}
+
+.entry-time {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 700;
+    color: #4CAF50;
+    font-size: 1.25rem;
+}
+
+.entry-time svg {
+    animation: tickRotate 2s ease-in-out infinite;
+}
+
+@keyframes tickRotate {
+
+    0%,
+    100% {
+        transform: rotate(0deg);
+    }
+
+    50% {
+        transform: rotate(180deg);
+    }
+}
+
+.delete-btn {
+    background: none;
+    border: none;
+    color: #dc3545;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.delete-btn:hover {
+    background: rgba(220, 53, 69, 0.1);
+    color: #c82333;
+    transform: scale(1.1);
+}
+
+.entry-content {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.entry-client {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #495057;
+    font-weight: 600;
+    background: rgba(76, 175, 80, 0.05);
+    padding: 0.5rem 0.75rem;
+    border-radius: 8px;
+    border-left: 3px solid #4CAF50;
+}
+
+.entry-description {
+    color: #2c3e50;
+    line-height: 1.6;
+    margin: 0;
+    background: rgba(248, 249, 250, 0.8);
+    padding: 0.75rem;
+    border-radius: 8px;
+    font-style: italic;
+}
+
+.entry-date {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #6c757d;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: white;
+    animation: fadeIn 0.8s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+.empty-state svg {
+    opacity: 0.7;
+    margin-bottom: 1rem;
+    animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+
+    0%,
+    100% {
+        transform: translateY(0px);
+    }
+
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+.empty-state h3 {
+    margin: 1rem 0 0.5rem;
+    font-size: 1.75rem;
+    font-weight: 700;
+}
+
+.empty-state p {
+    opacity: 0.8;
+    font-size: 1.1rem;
+    max-width: 400px;
+    margin: 0 auto;
+    line-height: 1.5;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .time-entries-list {
+        padding: 1.5rem;
+        margin-bottom: 6rem;
+    }
+
+    .entries-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .time-entry-card {
+        padding: 1.25rem;
+    }
+
+    .entry-header {
+        margin-bottom: 1rem;
+    }
+
+    .entry-time {
+        font-size: 1.1rem;
+    }
+
+    .empty-state {
+        padding: 2rem 1rem;
+    }
+
+    .empty-state h3 {
+        font-size: 1.5rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .time-entries-list {
+        padding: 1rem;
+        border-radius: 16px;
+    }
+
+    .entries-grid {
+        gap: 0.75rem;
+    }
+
+    .time-entry-card {
+        padding: 1rem;
+        border-radius: 12px;
+    }
+}
+
+/* Scrollbar styling */
+.timer-content::-webkit-scrollbar,
+.client-dropdown::-webkit-scrollbar {
+    width: 6px;
+}
+
+.timer-content::-webkit-scrollbar-track,
+.client-dropdown::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+}
+
+.timer-content::-webkit-scrollbar-thumb,
+.client-dropdown::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+}
+
+.timer-content::-webkit-scrollbar-thumb:hover,
+.client-dropdown::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}

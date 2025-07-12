@@ -8,6 +8,7 @@ import ProfileSetup from './components/ProfileSetup.tsx';
 import Dashboard from './components/Dashboard.tsx';
 import Clients from './components/Clients.tsx';
 import Invoices from './components/Invoices.tsx';
+import TimeTracking from './components/TimeTracking.tsx';
 import './App.css';
 
 function App() {
@@ -111,8 +112,7 @@ function App() {
         <Dashboard
           user={user}
           onSignOut={signOut}
-          onNavigateToClients={navigateToClients}
-          onNavigateToInvoices={navigateToInvoices}
+          onNavigate={setCurrentPage}
         />
       )}
       {currentPage === 'clients' && user && (
@@ -120,6 +120,9 @@ function App() {
       )}
       {currentPage === 'invoices' && user && (
         <Invoices user={user} onSignOut={signOut} onNavigateToDashboard={navigateToDashboard} />
+      )}
+      {currentPage === 'time-tracking' && user && (
+        <TimeTracking user={user} onSignOut={signOut} onNavigateToDashboard={navigateToDashboard} />
       )}
     </div>
   );
