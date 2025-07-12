@@ -13,6 +13,7 @@ interface InvoiceEmailData {
   dueDate: string;
   issuedDate: string;
   customMessage?: string;
+  invoiceNumber?: string;
 }
 
 export class EmailService {
