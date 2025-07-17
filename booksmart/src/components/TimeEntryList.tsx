@@ -9,7 +9,7 @@ interface TimeEntryListProps {
     onRefresh: () => void;
 }
 
-const TimeEntryList: React.FC<TimeEntryListProps> = ({ timeEntries, onRefresh }) => {
+const TimeEntryList = ({ timeEntries, onRefresh }: TimeEntryListProps) => {
     const formatTime = (seconds: number) => {
         const hours = Math.floor(seconds / 3600);
         const minutes = Math.floor((seconds % 3600) / 60);

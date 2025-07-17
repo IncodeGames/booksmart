@@ -6,7 +6,7 @@ import TimeEntryList from '../components/TimeEntryList';
 import { Play, Clock } from 'lucide-react';
 import './styles/TimeTracking.css';
 
-const TimeTrackingPage: React.FC = () => {
+const TimeTrackingPage = () => {
     const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([]);
     const [clients, setClients] = useState<Client[]>([]);
     const [isModalOpen, setIsModalOpen] = useState(false);

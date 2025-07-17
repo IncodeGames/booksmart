@@ -1,7 +1,8 @@
+import * as siteUtils from '../utils/siteUtils';
 import { useEffect } from 'react';
 import { useDashboardStore } from '../stores/dashboardStore';
 import { useNavigationStore } from '../stores/navigationStore';
-import { useWindowSize } from '../hooks/useWindowSize';
+import Sidebar from './Sidebar';
 import InvoiceTemplate from './InvoiceTemplate';
 import './styles/Dashboard.css';
 
@@ -37,7 +38,7 @@ interface Stat {
 }
 
 const Dashboard = ({ user, onSignOut, onNavigate }: DashboardProps) => {
-    const windowSize = useWindowSize();
+    const windowSize = siteUtils.useWindowSize();
 
     // Zustand stores
     const {
@@ -60,8 +61,6 @@ const Dashboard = ({ user, onSignOut, onNavigate }: DashboardProps) => {
     useEffect(() => {
         fetchDashboardData();
     }, [fetchDashboardData]);
-
-    const isMobile: boolean = windowSize.width <= 768;
 
     const formatCurrency = (amount: number): string => {
         return new Intl.NumberFormat('en-US', {
@@ -90,10 +89,6 @@ const Dashboard = ({ user, onSignOut, onNavigate }: DashboardProps) => {
             value: dashboardData.totalInvoices.toString(),
         },
     ];
-
-    const navigateToInvoiceTemplate = () => {
-        setCurrentDashboardView('invoice-template');
-    };
 
     const navigateBackToDashboard = () => {
         setCurrentDashboardView('dashboard');
@@ -124,87 +119,16 @@ const Dashboard = ({ user, onSignOut, onNavigate }: DashboardProps) => {
 
     return (
         <div className="dashboard">
-            {/* Sidebar */}
-            <aside className={`dashboard-sidebar ${sidebarOpen ? 'open' : ''}`}>
-                <div className="sidebar-header">
-                    <div className="logo">
-                        <div className="logo-icon"></div>
-                        <span className="logo-text">YourApp</span>
-                    </div>
-                    {isMobile && (
-                        <button
-                            className="sidebar-close"
-                            onClick={() => setSidebarOpen(false)}
-                        >
-                            ×
-                        </button>
-                    )}
-                </div>
-
-                <nav className="sidebar-nav">
-                    <a href="#" className="nav-item active">
-                        <span className="nav-icon">📊</span>
-                        Dashboard
-                    </a>
-                    <a
-                        href="#"
-                        className="nav-item"
-                        onClick={(e) => {
-                            onNavigate?.('clients')
-                        }}>
-                        <span className="nav-icon">👥</span>
-                        Clients
-                    </a>
-                    <a
-                        href="#"
-                        className="nav-item"
-                        onClick={(e) => {
-                            e.preventDefault();
-                            onNavigate?.('invoices');
-                        }}
-                    >
-                        <span className="nav-icon">🧾</span>
-                        Invoices
-                    </a>
-                    <a
-                        href="#"
-                        className="nav-item"
-                        onClick={(e) => {
-                            e.preventDefault();
-                            navigateToInvoiceTemplate();
-                        }}
-                    >
-                        <span className="nav-icon">📄</span>
-                        Invoice Templates
-                    </a>
-                    <a
-                        href="#"
-                        className="nav-item"
-                        onClick={(e) => {
-                            onNavigate?.('time-tracking')
-                        }}>
-                        <span className="nav-icon">🕓</span>
-                        Time Tracking
-                    </a>
-                    <a href="#" className="nav-item">
-                        <span className="nav-icon">📈</span>
-                        Analytics
-                    </a>
-                    <a href="#" className="nav-item" onClick={(e) => {
-                        onNavigate?.('settings')
-                    }}>
-                        <span className="nav-icon">⚙️</span>
-                        Settings
-                    </a>
-                </nav>
-            </aside>
+            <Sidebar
+                onNavigate={onNavigate}
+            />
 
             {/* Main Content */}
             <main className="dashboard-main">
                 {/* Header */}
                 <header className="dashboard-header">
                     <div className="header-left">
-                        {isMobile && (
+                        {siteUtils.isMobile(windowSize) && (
                             <button
                                 className="menu-toggle"
                                 onClick={() => setSidebarOpen(true)}
@@ -436,7 +360,7 @@ const Dashboard = ({ user, onSignOut, onNavigate }: DashboardProps) => {
             </main>
 
             {/* Mobile Sidebar Overlay */}
-            {isMobile && sidebarOpen && (
+            {siteUtils.isMobile(windowSize) && sidebarOpen && (
                 <div
                     className="sidebar-overlay"
                     onClick={() => setSidebarOpen(false)}

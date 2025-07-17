@@ -1,7 +1,7 @@
+import * as siteUtils from '../utils/siteUtils';
 import { useState, useEffect } from 'react';
 import { supabase } from '../supabase';
 import { useNavigationStore } from '../stores/navigationStore';
-import { useWindowSize } from '../hooks/useWindowSize';
 import './styles/Settings.css';
 
 enum Currency {
@@ -80,7 +80,7 @@ interface Profile {
 }
 
 const Settings = ({ user, onSignOut, onNavigateToDashboard }: SettingsProps) => {
-    const windowSize = useWindowSize();
+    const windowSize = siteUtils.useWindowSize();
     const { sidebarOpen, setSidebarOpen } = useNavigationStore();
 
     const [profile, setProfile] = useState<Profile>({
@@ -104,8 +104,6 @@ const Settings = ({ user, onSignOut, onNavigateToDashboard }: SettingsProps) => 
     const [message, setMessage] = useState('');
     const [darkMode, setDarkMode] = useState(false);
     const [colorBlindMode, setColorBlindMode] = useState(false);
-
-    const isMobile: boolean = windowSize.width <= 768;
 
     useEffect(() => {
         fetchProfile();
@@ -201,7 +199,7 @@ const Settings = ({ user, onSignOut, onNavigateToDashboard }: SettingsProps) => 
                         <div className="logo-icon"></div>
                         <span className="logo-text">YourApp</span>
                     </div>
-                    {isMobile && (
+                    {siteUtils.isMobile(windowSize) && (
                         <button
                             className="sidebar-close"
                             onClick={() => setSidebarOpen(false)}
@@ -244,7 +242,7 @@ const Settings = ({ user, onSignOut, onNavigateToDashboard }: SettingsProps) => 
                 {/* Header */}
                 <header className="dashboard-header">
                     <div className="header-left">
-                        {isMobile && (
+                        {siteUtils.isMobile(windowSize) && (
                             <button
                                 className="menu-toggle"
                                 onClick={() => setSidebarOpen(true)}
@@ -481,7 +479,7 @@ const Settings = ({ user, onSignOut, onNavigateToDashboard }: SettingsProps) => 
             </main>
 
             {/* Mobile Sidebar Overlay */}
-            {isMobile && sidebarOpen && (
+            {siteUtils.isMobile(windowSize) && sidebarOpen && (
                 <div
                     className="sidebar-overlay"
                     onClick={() => setSidebarOpen(false)}

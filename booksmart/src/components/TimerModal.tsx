@@ -14,7 +14,7 @@ interface TimerModalProps {
     formatTime: (seconds: number) => string;
 }
 
-const TimerModal: React.FC<TimerModalProps> = ({
+const TimerModal = ({
     isOpen,
     timer,
     clients,
@@ -23,7 +23,7 @@ const TimerModal: React.FC<TimerModalProps> = ({
     onLogTime,
     onDiscard,
     formatTime,
-}) => {
+}: TimerModalProps) => {
     const [isExpanded, setIsExpanded] = useState(false);
     const [showClientDropdown, setShowClientDropdown] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');

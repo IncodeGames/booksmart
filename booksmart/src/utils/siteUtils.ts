@@ -25,3 +25,7 @@ export const useWindowSize = (): WindowSize => {
 
     return windowSize;
 };
+
+export const isMobile = (windowSize: WindowSize): boolean => {
+    return (windowSize.width <= 768);
+};
