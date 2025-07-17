@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '../supabase';
+import { supabase } from '../lib/supabase';
 import { EmailService } from '../services/emailService';
 import './styles/CreateInvoice.css';
 

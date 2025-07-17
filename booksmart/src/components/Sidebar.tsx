@@ -5,8 +5,6 @@ interface SidebarProps {
     onNavigate?: (string) => void;
 }
 
-
-
 const Sidebar = ({
     onNavigate
 }: SidebarProps) => {
@@ -89,6 +87,12 @@ const Sidebar = ({
                 }}>
                     <span className="nav-icon">⚙️</span>
                     Settings
+                </a>
+                <a href="#" className="nav-item" onClick={(e) => {
+                    onNavigate?.('billing')
+                }}>
+                    <span className="nav-icon">💳</span>
+                    Billing
                 </a>
             </nav>
         </aside >

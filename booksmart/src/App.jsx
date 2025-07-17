@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { supabase } from './supabase';
+import { supabase } from './lib/supabase';
 import { useAuthStore } from './stores/authStore';
 import { useNavigationStore } from './stores/navigationStore';
 import LandingPage from './components/LandingPage.tsx';
@@ -10,6 +10,7 @@ import Clients from './components/Clients.tsx';
 import Invoices from './components/Invoices.tsx';
 import Settings from './components/Settings.tsx';
 import TimeTracking from './components/TimeTracking.tsx';
+import Billing from './modules/billing/BillingPage.tsx';
 import './App.css';
 
 function App() {
@@ -114,11 +115,14 @@ function App() {
       {currentPage === 'invoices' && user && (
         <Invoices user={user} onSignOut={signOut} onNavigateToDashboard={navigateToDashboard} />
       )}
+      {currentPage === 'time-tracking' && user && (
+        <TimeTracking user={user} onSignOut={signOut} onNavigateToDashboard={navigateToDashboard} />
+      )}
       {currentPage === 'settings' && user && (
         <Settings user={user} onSignOut={signOut} onNavigateToDashboard={navigateToDashboard} />
       )}
-      {currentPage === 'time-tracking' && user && (
-        <TimeTracking user={user} onSignOut={signOut} onNavigateToDashboard={navigateToDashboard} />
+      {currentPage === 'billing' && user && (
+        <Billing user={user} onSignOut={signOut} onNavigateToDashboard={navigateToDashboard} />
       )}
     </div>
   );

@@ -1,0 +1,123 @@
+:root {
+    --primary-color: #5D5CED;
+    --primary-hover: #4F4EE8;
+    --primary-light: #E8E8FD;
+    --profit-color: #5BAF7C;
+    --profit-light: #E8F5ED;
+    --expense-color: #AF5A5C;
+    --expense-light: #F5E8E8;
+    --success-color: #5BAF7C;
+    --warning-color: #f59e0b;
+    --error-color: #AF5A5C;
+    --text-color: #1f2937;
+    --text-light: #6b7280;
+    --text-muted: #9ca3af;
+    --white: #ffffff;
+    --background: #f9fafb;
+    --background-secondary: #f3f4f6;
+    --border-color: #e5e7eb;
+    --sidebar-width: 280px;
+    --header-height: 70px;
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.billing-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 24px;
+    background-color: var(--background);
+}
+
+.billing-loading-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 50vh;
+    gap: 16px;
+}
+
+.current-plan-card {
+    margin-bottom: 24px;
+}
+
+.current-plan-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.billing-cycle-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin: 24px 0;
+}
+
+.plans-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 24px;
+    margin-bottom: 32px;
+}
+
+.plan-card {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.plan-card.current-plan {
+    border-color: #1890ff;
+    box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+}
+
+.plan-price {
+    margin: 16px 0;
+}
+
+.price-interval {
+    font-size: 14px;
+    color: #8c8c8c;
+}
+
+.feature-icon {
+    color: #52c41a;
+    margin-right: 8px;
+}
+
+.payment-method-card {
+    margin-bottom: 24px;
+}
+
+.payment-method-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.card-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.card-icon {
+    font-size: 24px;
+    color: #1890ff;
+}
+
+.no-payment-method {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    padding: 16px;
+}
+
+.billing-history-section {
+    margin-top: 24px;
+}

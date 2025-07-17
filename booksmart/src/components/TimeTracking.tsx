@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../supabase';
+import { supabase } from '../lib/supabase';
 import { TimeEntry, Client, TimerState } from '../types';
 import TimerModal from '../components/TimerModal';
 import TimeEntryList from '../components/TimeEntryList';

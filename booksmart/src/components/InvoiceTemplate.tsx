@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../supabase';
+import { supabase } from '../lib/supabase';
 import { Designer } from '@pdfme/ui';
 import { BLANK_A4_PDF, Template, checkTemplate } from '@pdfme/common';
 import './styles/InvoiceTemplate.css';

@@ -1,7 +1,7 @@
 import React from 'react';
 import { TimeEntry } from '../types';
 import { Clock, User, Calendar, Trash2 } from 'lucide-react';
-import { supabase } from '../supabase';
+import { supabase } from '../lib/supabase';
 import './styles/TimeEntryList.css';
 
 interface TimeEntryListProps {

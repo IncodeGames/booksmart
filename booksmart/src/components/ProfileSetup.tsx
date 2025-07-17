@@ -1,5 +1,5 @@
 import { useState, useEffect, FormEvent } from 'react';
-import { supabase } from '../supabase';
+import { supabase } from '../lib/supabase';
 import './styles/ProfileSetup.css';
 
 interface User {
