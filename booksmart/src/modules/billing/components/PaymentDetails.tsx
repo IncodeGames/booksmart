@@ -1,9 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Typography, Button, Divider, Form, Input, Modal } from 'antd';
-import { CreditCardOutlined, EditOutlined } from '@ant-design/icons';
 import { supabase } from '../../../lib/supabase';
-
-const { Title, Text } = Typography;
 
 interface PaymentDetailsProps {
     user: any;
@@ -11,8 +7,7 @@ interface PaymentDetailsProps {
 
 const PaymentDetails = ({ user }: PaymentDetailsProps) => {
     const [paymentMethod, setPaymentMethod] = useState<any>(null);
-    const [isModalVisible, setIsModalVisible] = useState(false);
-    const [form] = Form.useForm();
+    const [isModalOpen, setIsModalOpen] = useState(false);
 
     useEffect(() => {
         if (user) {
@@ -22,8 +17,6 @@ const PaymentDetails = ({ user }: PaymentDetailsProps) => {
 
     const fetchPaymentMethod = async () => {
         try {
-            // In a real app, you would fetch this from your Stripe integration
-            // This is a placeholder for demonstration
             const { data, error } = await supabase
                 .from('payment_methods')
                 .select('*')
@@ -38,126 +31,99 @@ const PaymentDetails = ({ user }: PaymentDetailsProps) => {
         }
     };
 
-    const showModal = () => {
-        setIsModalVisible(true);
-    };
-
-    const handleCancel = () => {
-        setIsModalVisible(false);
-    };
-
-    const handleUpdatePaymentMethod = (values: any) => {
-        // This would typically integrate with Stripe Elements or Stripe.js
-        console.log('Updating payment method:', values);
-        setIsModalVisible(false);
-
-        // Mock updated payment method
-        setPaymentMethod({
-            id: 'pm_mock',
-            card_brand: 'Visa',
-            last4: values.cardNumber.slice(-4),
-            exp_month: values.expiry.split('/')[0],
-            exp_year: '20' + values.expiry.split('/')[1],
-        });
+    const handleUpdatePaymentMethod = (e: React.FormEvent) => {
+        e.preventDefault();
+        // Stripe integration would go here
+        setIsModalOpen(false);
     };
 
     return (
         <div className="payment-details-section">
-            <Title level={4}>Payment Method</Title>
+            <div className="section-header">
+                <h2>Payment Method</h2>
+            </div>
 
-            <Card className="payment-method-card">
+            <div className="payment-method-card">
                 {paymentMethod ? (
                     <div className="payment-method-info">
-                        <div className="card-info">
-                            <CreditCardOutlined className="card-icon" />
-                            <div>
-                                <Text strong>{paymentMethod.card_brand}</Text>
-                                <Text> •••• {paymentMethod.last4}</Text>
-                                <div>
-                                    <Text type="secondary">
-                                        Expires {paymentMethod.exp_month}/{paymentMethod.exp_year}
-                                    </Text>
-                                </div>
+                        <div className="card-details">
+                            <div className="card-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                                    <line x1="1" y1="10" x2="23" y2="10"></line>
+                                </svg>
+                            </div>
+                            <div className="card-info">
+                                <span className="card-brand">{paymentMethod.card_brand}</span>
+                                <span className="card-number">•••• {paymentMethod.last4}</span>
+                                <span className="card-expiry">
+                                    Expires {paymentMethod.exp_month}/{paymentMethod.exp_year}
+                                </span>
                             </div>
                         </div>
-                        <Button
-                            icon={<EditOutlined />}
-                            type="link"
-                            onClick={showModal}
+                        <button
+                            className="btn-text"
+                            onClick={() => setIsModalOpen(true)}
                         >
                             Update
-                        </Button>
+                        </button>
                     </div>
                 ) : (
                     <div className="no-payment-method">
-                        <Text>No payment method on file</Text>
-                        <Button type="primary" onClick={showModal}>
+                        <p>No payment method on file</p>
+                        <button
+                            className="btn-primary"
+                            onClick={() => setIsModalOpen(true)}
+                        >
                             Add Payment Method
-                        </Button>
+                        </button>
                     </div>
                 )}
-            </Card>
+            </div>
 
-            <Modal
-                title="Update Payment Method"
-                open={isModalVisible}
-                onCancel={handleCancel}
-                footer={null}
-            >
-                <Form
-                    form={form}
-                    layout="vertical"
-                    onFinish={handleUpdatePaymentMethod}
-                    initialValues={{
-                        cardName: '',
-                        cardNumber: '',
-                        expiry: '',
-                        cvc: '',
-                    }}
-                >
-                    <Form.Item
-                        name="cardName"
-                        label="Cardholder Name"
-                        rules={[{ required: true, message: 'Please enter cardholder name' }]}
-                    >
-                        <Input placeholder="John Doe" />
-                    </Form.Item>
+            {isModalOpen && (
+                <div className="modal-overlay" onClick={() => setIsModalOpen(false)}>
+                    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h3>Update Payment Method</h3>
+                            <button
+                                className="modal-close"
+                                onClick={() => setIsModalOpen(false)}
+                            >
+                                ×
+                            </button>
+                        </div>
 
-                    <Form.Item
-                        name="cardNumber"
-                        label="Card Number"
-                        rules={[{ required: true, message: 'Please enter card number' }]}
-                    >
-                        <Input placeholder="1234 5678 9012 3456" />
-                    </Form.Item>
+                        <form onSubmit={handleUpdatePaymentMethod} className="payment-form">
+                            <div className="form-group">
+                                <label>Cardholder Name</label>
+                                <input type="text" placeholder="John Doe" required />
+                            </div>
 
-                    <div style={{ display: 'flex', gap: '16px' }}>
-                        <Form.Item
-                            name="expiry"
-                            label="Expiry Date"
-                            rules={[{ required: true, message: 'Please enter expiry date' }]}
-                            style={{ flex: 1 }}
-                        >
-                            <Input placeholder="MM/YY" />
-                        </Form.Item>
+                            <div className="form-group">
+                                <label>Card Number</label>
+                                <input type="text" placeholder="1234 5678 9012 3456" required />
+                            </div>
 
-                        <Form.Item
-                            name="cvc"
-                            label="CVC"
-                            rules={[{ required: true, message: 'Please enter CVC' }]}
-                            style={{ flex: 1 }}
-                        >
-                            <Input placeholder="123" />
-                        </Form.Item>
+                            <div className="form-row">
+                                <div className="form-group">
+                                    <label>Expiry Date</label>
+                                    <input type="text" placeholder="MM/YY" required />
+                                </div>
+
+                                <div className="form-group">
+                                    <label>CVC</label>
+                                    <input type="text" placeholder="123" required />
+                                </div>
+                            </div>
+
+                            <button type="submit" className="btn-primary full-width">
+                                Save Payment Method
+                            </button>
+                        </form>
                     </div>
-
-                    <Form.Item>
-                        <Button type="primary" htmlType="submit" block>
-                            Save Payment Method
-                        </Button>
-                    </Form.Item>
-                </Form>
-            </Modal>
+                </div>
+            )}
         </div>
     );
 };

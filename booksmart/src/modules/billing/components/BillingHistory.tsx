@@ -1,9 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Typography, Table, Tag, Button } from 'antd';
-import { DownloadOutlined } from '@ant-design/icons';
 import { supabase } from '../../../lib/supabase';
-
-const { Title, Text } = Typography;
 
 interface BillingHistoryProps {
     user: any;
@@ -22,8 +18,6 @@ const BillingHistory = ({ user }: BillingHistoryProps) => {
     const fetchInvoices = async () => {
         setLoading(true);
         try {
-            // In a real app, you would fetch this from your Stripe integration
-            // This is a placeholder for demonstration
             const { data, error } = await supabase
                 .from('invoices')
                 .select('*')
@@ -41,54 +35,10 @@ const BillingHistory = ({ user }: BillingHistoryProps) => {
     };
 
     const handleDownloadInvoice = (invoiceId: string) => {
-        // This would typically generate or fetch a PDF invoice from Stripe
         console.log(`Downloading invoice: ${invoiceId}`);
     };
 
-    const columns = [
-        {
-            title: 'Date',
-            dataIndex: 'created_at',
-            key: 'created_at',
-            render: (text: string) => new Date(text).toLocaleDateString(),
-        },
-        {
-            title: 'Description',
-            dataIndex: 'description',
-            key: 'description',
-        },
-        {
-            title: 'Amount',
-            dataIndex: 'amount',
-            key: 'amount',
-            render: (amount: number) => `$${(amount / 100).toFixed(2)}`,
-        },
-        {
-            title: 'Status',
-            dataIndex: 'status',
-            key: 'status',
-            render: (status: string) => (
-                <Tag color={status === 'paid' ? 'green' : 'volcano'}>
-                    {status.toUpperCase()}
-                </Tag>
-            ),
-        },
-        {
-            title: 'Invoice',
-            key: 'invoice',
-            render: (_: any, record: any) => (
-                <Button
-                    type="link"
-                    icon={<DownloadOutlined />}
-                    onClick={() => handleDownloadInvoice(record.id)}
-                >
-                    PDF
-                </Button>
-            ),
-        },
-    ];
-
-    // Provide sample data if no invoices exist
+    // Sample data for demonstration
     const sampleInvoices = [
         {
             id: 'inv_sample1',
@@ -110,15 +60,56 @@ const BillingHistory = ({ user }: BillingHistoryProps) => {
 
     return (
         <div className="billing-history-section">
-            <Title level={4}>Billing History</Title>
+            <div className="section-header">
+                <h2>Billing History</h2>
+            </div>
 
-            <Table
-                columns={columns}
-                dataSource={displayInvoices}
-                rowKey="id"
-                loading={loading}
-                pagination={{ pageSize: 5 }}
-            />
+            <div className="invoices-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Description</th>
+                            <th>Amount</th>
+                            <th>Status</th>
+                            <th>Invoice</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {loading ? (
+                            <tr>
+                                <td colSpan={5} className="loading-cell">
+                                    <div className="loading-spinner small"></div>
+                                </td>
+                            </tr>
+                        ) : (
+                            displayInvoices.map((invoice) => (
+                                <tr key={invoice.id}>
+                                    <td>{new Date(invoice.created_at).toLocaleDateString()}</td>
+                                    <td>{invoice.description}</td>
+                                    <td>${(invoice.amount / 100).toFixed(2)}</td>
+                                    <td>
+                                        <span className={`status-badge ${invoice.status}`}>
+                                            {invoice.status}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <button
+                                            className="btn-text"
+                                            onClick={() => handleDownloadInvoice(invoice.id)}
+                                        >
+                                            <svg className="download-icon" viewBox="0 0 20 20" fill="currentColor">
+                                                <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
+                                            </svg>
+                                            PDF
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))
+                        )}
+                    </tbody>
+                </table>
+            </div>
         </div>
     );
 };

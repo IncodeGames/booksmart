@@ -5,11 +5,7 @@ import { supabase } from '../../lib/supabase';
 import PlanCard from './components/PlanCard';
 import PaymentDetails from './components/PaymentDetails';
 import BillingHistory from './components/BillingHistory';
-import { Button, Card, Switch, Typography, Divider, Flex, Spin } from 'antd';
-import { CreditCardOutlined, CheckCircleOutlined } from '@ant-design/icons';
 import './BillingPage.css';
-
-const { Title, Text } = Typography;
 
 const Billing = () => {
     // const navigate = useNavigate();
@@ -44,8 +40,8 @@ const Billing = () => {
     if (isLoading) {
         return (
             <div className="billing-loading-container">
-                <Spin size="large" />
-                <Text>Loading subscription information...</Text>
+                <div className="loading-spinner"></div>
+                <span className="loading-text">Loading subscription information...</span>
             </div>
         );
     }
@@ -95,60 +91,66 @@ const Billing = () => {
     ];
 
     return (
-        <div className="billing-container">
-            <Title level={2}>Subscription & Billing</Title>
+        <div className="billing-page">
+            <div className="billing-header">
+                <h1 className="page-title">Subscription & Billing</h1>
+                <p className="page-subtitle">Manage your subscription and payment methods</p>
+            </div>
 
-            <Card className="current-plan-card">
-                <Title level={4}>Current Plan</Title>
-                <div className="current-plan-info">
-                    <div>
-                        <Text strong>{currentPlan?.name || 'Free'}</Text>
-                        <div>
+            <div className="current-plan-section">
+                <div className="section-header">
+                    <h2>Current Plan</h2>
+                </div>
+                <div className="current-plan-card">
+                    <div className="current-plan-info">
+                        <div className="plan-status">
+                            <h3>{currentPlan?.name || 'Free'}</h3>
                             {currentPlan?.id !== 'free' ? (
-                                <Text type="success">
-                                    <CheckCircleOutlined /> Active
-                                </Text>
+                                <span className="status-badge active">Active</span>
                             ) : (
-                                <Text>Free tier</Text>
+                                <span className="status-badge">Free tier</span>
                             )}
                         </div>
+                        {currentPlan?.id !== 'free' && (
+                            <button className="btn-secondary">
+                                Manage Subscription
+                            </button>
+                        )}
                     </div>
-                    {currentPlan?.id !== 'free' && (
-                        <Button type="primary" ghost>
-                            Manage Subscription
-                        </Button>
-                    )}
                 </div>
-            </Card>
-
-            <div className="billing-cycle-toggle">
-                <Text>Monthly</Text>
-                <Switch
-                    checked={yearlyBilling}
-                    onChange={handleBillingCycleChange}
-                />
-                <Text>Yearly</Text>
-                {yearlyBilling && <Text type="success">Save up to 25%</Text>}
             </div>
 
-            <div className="plans-container">
-                {plans.map((plan) => (
-                    <PlanCard
-                        key={plan.id}
-                        plan={plan}
-                        isCurrentPlan={currentPlan?.id === plan.id}
-                        onSelect={handlePlanChange}
-                    />
-                ))}
+            <div className="plans-section">
+                <div className="billing-cycle-toggle">
+                    <span className={!yearlyBilling ? 'active' : ''}>Monthly</span>
+                    <label className="toggle-switch">
+                        <input
+                            type="checkbox"
+                            checked={yearlyBilling}
+                            onChange={(e) => handleBillingCycleChange(e.target.checked)}
+                        />
+                        <span className="toggle-slider"></span>
+                    </label>
+                    <span className={yearlyBilling ? 'active' : ''}>Yearly</span>
+                    {yearlyBilling && <span className="save-badge">Save up to 25%</span>}
+                </div>
+
+                <div className="plans-grid">
+                    {plans.map((plan) => (
+                        <PlanCard
+                            key={plan.id}
+                            plan={plan}
+                            isCurrentPlan={currentPlan?.id === plan.id}
+                            onSelect={handlePlanChange}
+                        />
+                    ))}
+                </div>
             </div>
 
-            <Divider />
-
-            <PaymentDetails user={user} />
-
-            <Divider />
-
-            <BillingHistory user={user} />
+            <div className="payment-billing-section">
+                <PaymentDetails user={user} />
+                <BillingHistory user={user} />
+            </div>
         </div>
     );
 };

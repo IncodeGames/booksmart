@@ -1,9 +1,5 @@
 
 import React from 'react';
-import { Card, Button, Typography, List } from 'antd';
-import { CheckOutlined } from '@ant-design/icons';
-
-const { Title, Text } = Typography;
 
 interface Plan {
     id: string;
@@ -12,6 +8,7 @@ interface Plan {
     price: number;
     interval: string;
     features: string[];
+    popular?: boolean;
 }
 
 interface PlanCardProps {
@@ -22,39 +19,38 @@ interface PlanCardProps {
 
 const PlanCard = ({ plan, isCurrentPlan, onSelect }: PlanCardProps) => {
     return (
-        <Card
-            className={`plan-card ${isCurrentPlan ? 'current-plan' : ''}`}
-            hoverable
-        >
-            <Title level={3}>{plan.name}</Title>
-            <Text type="secondary">{plan.description}</Text>
+        <div className={`plan-card ${isCurrentPlan ? 'current' : ''} ${plan.popular ? 'popular' : ''}`}>
+            {plan.popular && <div className="popular-badge">Most Popular</div>}
 
-            <div className="plan-price">
-                <Title level={2}>
-                    ${plan.price.toFixed(2)}
-                    <span className="price-interval">/{plan.interval}</span>
-                </Title>
+            <div className="plan-header">
+                <h3 className="plan-name">{plan.name}</h3>
+                <p className="plan-description">{plan.description}</p>
             </div>
 
-            <List
-                itemLayout="horizontal"
-                dataSource={plan.features}
-                renderItem={(item) => (
-                    <List.Item>
-                        <CheckOutlined className="feature-icon" /> {item}
-                    </List.Item>
-                )}
-            />
+            <div className="plan-pricing">
+                <span className="price-amount">${plan.price.toFixed(2)}</span>
+                <span className="price-interval">/{plan.interval}</span>
+            </div>
 
-            <Button
-                type={isCurrentPlan ? "default" : "primary"}
-                block
+            <ul className="plan-features">
+                {plan.features.map((feature, index) => (
+                    <li key={index}>
+                        <svg className="check-icon" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                        {feature}
+                    </li>
+                ))}
+            </ul>
+
+            <button
+                className={`plan-button ${isCurrentPlan ? 'current' : 'upgrade'}`}
                 onClick={() => onSelect(plan.id)}
                 disabled={isCurrentPlan}
             >
                 {isCurrentPlan ? 'Current Plan' : `Upgrade to ${plan.name}`}
-            </Button>
-        </Card>
+            </button>
+        </div>
     );
 };
 
