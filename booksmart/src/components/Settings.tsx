@@ -2,6 +2,7 @@ import * as siteUtils from '../utils/siteUtils';
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useNavigationStore } from '../stores/navigationStore';
+import Sidebar from './Sidebar';
 import './styles/Settings.css';
 
 enum Currency {
@@ -60,7 +61,7 @@ interface User {
 interface SettingsProps {
     user: User;
     onSignOut: () => void;
-    onNavigateToDashboard: () => void;
+    onNavigate?: (string) => void;
 }
 
 interface Profile {
@@ -79,7 +80,7 @@ interface Profile {
     currency: Currency;
 }
 
-const Settings = ({ user, onSignOut, onNavigateToDashboard }: SettingsProps) => {
+const Settings = ({ user, onSignOut, onNavigate }: SettingsProps) => {
     const windowSize = siteUtils.useWindowSize();
     const { sidebarOpen, setSidebarOpen } = useNavigationStore();
 
@@ -192,50 +193,9 @@ const Settings = ({ user, onSignOut, onNavigateToDashboard }: SettingsProps) => 
 
     return (
         <div className="dashboard">
-            {/* Sidebar */}
-            <aside className={`dashboard-sidebar ${sidebarOpen ? 'open' : ''}`}>
-                <div className="sidebar-header">
-                    <div className="logo">
-                        <div className="logo-icon"></div>
-                        <span className="logo-text">YourApp</span>
-                    </div>
-                    {siteUtils.isMobile(windowSize) && (
-                        <button
-                            className="sidebar-close"
-                            onClick={() => setSidebarOpen(false)}
-                        >
-                            ×
-                        </button>
-                    )}
-                </div>
-
-                <nav className="sidebar-nav">
-                    <a href="#" className="nav-item" onClick={onNavigateToDashboard}>
-                        <span className="nav-icon">📊</span>
-                        Dashboard
-                    </a>
-                    <a href="#" className="nav-item">
-                        <span className="nav-icon">👥</span>
-                        Clients
-                    </a>
-                    <a href="#" className="nav-item">
-                        <span className="nav-icon">🧾</span>
-                        Invoices
-                    </a>
-                    <a href="#" className="nav-item">
-                        <span className="nav-icon">📄</span>
-                        Invoice Templates
-                    </a>
-                    <a href="#" className="nav-item">
-                        <span className="nav-icon">📈</span>
-                        Analytics
-                    </a>
-                    <a href="#" className="nav-item active">
-                        <span className="nav-icon">⚙️</span>
-                        Settings
-                    </a>
-                </nav>
-            </aside>
+            <Sidebar
+                onNavigate={onNavigate}
+            />
 
             {/* Main Content */}
             <main className="dashboard-main">

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-// import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import useSubscriptionStore from './stores/subscriptionStore';
 import { supabase } from '../../lib/supabase';
 import PlanCard from './components/PlanCard';

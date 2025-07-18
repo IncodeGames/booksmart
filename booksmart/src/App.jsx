@@ -119,7 +119,7 @@ function App() {
         <TimeTracking user={user} onSignOut={signOut} onNavigateToDashboard={navigateToDashboard} />
       )}
       {currentPage === 'settings' && user && (
-        <Settings user={user} onSignOut={signOut} onNavigateToDashboard={navigateToDashboard} />
+        <Settings user={user} onSignOut={signOut} onNavigate={setCurrentPage} />
       )}
       {currentPage === 'billing' && user && (
         <Billing user={user} onSignOut={signOut} onNavigateToDashboard={navigateToDashboard} />

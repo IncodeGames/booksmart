@@ -62,17 +62,6 @@ const Sidebar = ({
                     href="#"
                     className="nav-item"
                     onClick={(e) => {
-                        e.preventDefault();
-                        setCurrentDashboardView('invoice-template');;
-                    }}
-                >
-                    <span className="nav-icon">📄</span>
-                    Invoice Templates
-                </a>
-                <a
-                    href="#"
-                    className="nav-item"
-                    onClick={(e) => {
                         onNavigate?.('time-tracking')
                     }}>
                     <span className="nav-icon">🕓</span>

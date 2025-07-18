@@ -3,7 +3,6 @@ import { useEffect } from 'react';
 import { useDashboardStore } from '../stores/dashboardStore';
 import { useNavigationStore } from '../stores/navigationStore';
 import Sidebar from './Sidebar';
-import InvoiceTemplate from './InvoiceTemplate';
 import './styles/Dashboard.css';
 
 import {
@@ -112,10 +111,6 @@ const Dashboard = ({ user, onSignOut, onNavigate }: DashboardProps) => {
             </button>
         </div>
     );
-
-    if (currentDashboardView === 'invoice-template') {
-        return <InvoiceTemplate user={user} onBack={navigateBackToDashboard} />;
-    }
 
     return (
         <div className="dashboard">
