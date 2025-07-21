@@ -458,30 +458,78 @@
     }
 }
 
-.back-button {
+.auth-back-btn {
     position: fixed;
     top: 24px;
     left: 24px;
     z-index: 1000;
-    background: rgba(255, 255, 255, 0.2);
-    border: 1px solid rgba(255, 255, 255, 0.3);
+    background: var(--primary-color);
     color: var(--white);
+    box-shadow: var(--shadow-md);
     padding: 12px 20px;
     border-radius: 12px;
     font-size: 14px;
     font-weight: 500;
     cursor: pointer;
     transition: all 0.2s ease;
-    backdrop-filter: blur(10px);
 }
 
-.back-button:hover {
-    background: rgba(255, 255, 255, 0.3);
+.auth-back-btn:hover {
+    background: var(--primary-hover);
     transform: translateY(-1px);
+    box-shadow: var(--shadow-lg);
+}
+
+/* Scrollbar styling */
+.auth-card::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.auth-card::-webkit-scrollbar-track {
+    background: rgba(239, 239, 239, 0.3);
+    border-radius: 0 24px 24px 0;
+    margin: 48px 0;
+    /* Match the card's padding */
+}
+
+.auth-card::-webkit-scrollbar-thumb {
+    background: rgba(155, 155, 155, 0.5);
+    border-radius: 4px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+}
+
+.auth-card::-webkit-scrollbar-thumb:hover {
+    background: rgba(100, 100, 100, 0.6);
+}
+
+/* For mobile where border-radius is 0 */
+.auth-card.mobile::-webkit-scrollbar-track {
+    border-radius: 4px;
+}
+
+/* Firefox scrollbar styling */
+.auth-card {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(155, 155, 155, 0.5) rgba(239, 239, 239, 0.3);
+}
+
+/* Adjust the right padding to prevent content from being hidden behind scrollbar */
+.auth-card.desktop {
+    padding-right: 40px;
+    /* Reduced from 48px to account for scrollbar */
+}
+
+.auth-card.tablet {
+    padding-right: 36px;
+    /* Reduced from 40px to account for scrollbar */
 }
 
 @media (max-width: 768px) {
-    .back-button {
+    .auth-back-btn {
+        color: var(--white);
+        background: var(--primary-color);
         top: 16px;
         left: 16px;
         padding: 10px 16px;
