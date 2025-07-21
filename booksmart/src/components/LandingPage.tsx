@@ -1,16 +1,15 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router';
+import { Destinations } from '../lib/routes';
 import './styles/LandingPage.css';
-
-interface LandingPageProps {
-    onNavigateToAuth: () => void;
-}
 
 interface WindowSize {
     width: number;
     height: number;
 }
 
-const LandingPage = ({ onNavigateToAuth }: LandingPageProps) => {
+const LandingPage = () => {
+    const navigate = useNavigate();
     const [windowSize, setWindowSize] = useState<WindowSize>({
         width: window.innerWidth,
         height: window.innerHeight
@@ -30,6 +29,10 @@ const LandingPage = ({ onNavigateToAuth }: LandingPageProps) => {
 
     const isMobile: boolean = windowSize.width <= 768;
 
+    const handleNavigateToAuth = () => {
+        navigate(Destinations.AUTH);
+    };
+
     return (
         <div className="landing-page">
             {/* Background Elements */}
@@ -45,11 +48,11 @@ const LandingPage = ({ onNavigateToAuth }: LandingPageProps) => {
                 <div className="header-content">
                     <div className="logo">
                         <div className="logo-icon"></div>
-                        <span className="logo-text">YourApp</span>
+                        <span className="logo-text">Booksmart</span>
                     </div>
                     <button
                         className="btn btn-login"
-                        onClick={onNavigateToAuth}
+                        onClick={handleNavigateToAuth}
                     >
                         Sign In
                     </button>
@@ -71,7 +74,7 @@ const LandingPage = ({ onNavigateToAuth }: LandingPageProps) => {
                         <div className="hero-actions">
                             <button
                                 className="btn btn-primary btn-large"
-                                onClick={onNavigateToAuth}
+                                onClick={handleNavigateToAuth}
                             >
                                 Get Started Free
                             </button>
@@ -139,7 +142,7 @@ const LandingPage = ({ onNavigateToAuth }: LandingPageProps) => {
                     <p>Join our community and start building today</p>
                     <button
                         className="btn btn-primary btn-large"
-                        onClick={onNavigateToAuth}
+                        onClick={handleNavigateToAuth}
                     >
                         Create Account
                     </button>

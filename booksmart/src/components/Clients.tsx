@@ -1,5 +1,7 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router';
 import { supabase } from '../lib/supabase';
+import Sidebar from './Sidebar';
 import './styles/Clients.css';
 
 interface User {
@@ -9,7 +11,6 @@ interface User {
 interface ClientsProps {
     user: User;
     onSignOut: () => void;
-    onNavigateToDashboard: () => void;
 }
 
 interface Client {
@@ -29,7 +30,8 @@ interface NewClient {
     company: string;
 }
 
-const Clients = ({ user, onSignOut, onNavigateToDashboard }: ClientsProps) => {
+const Clients = ({ user, onSignOut }: ClientsProps) => {
+    const navigate = useNavigate();
     const [clients, setClients] = useState<Client[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [showCreateModal, setShowCreateModal] = useState<boolean>(false);
@@ -146,17 +148,16 @@ const Clients = ({ user, onSignOut, onNavigateToDashboard }: ClientsProps) => {
         });
     };
 
+    const handleNavigateToDashboard = () => {
+        navigate('/dashboard');
+    };
+
     return (
         <div className="clients-page">
+            <Sidebar />
             {/* Header */}
             <header className="clients-header">
                 <div className="header-left">
-                    <button
-                        className="back-button"
-                        onClick={onNavigateToDashboard}
-                    >
-                        ← Back to Dashboard
-                    </button>
                     <h1>Clients</h1>
                 </div>
 

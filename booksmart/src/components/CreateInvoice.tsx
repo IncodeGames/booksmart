@@ -1,4 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router';
+import { Destinations } from '../lib/routes';
 import { supabase } from '../lib/supabase';
 import { EmailService } from '../services/emailService';
 import './styles/CreateInvoice.css';
@@ -10,8 +12,6 @@ interface User {
 interface CreateInvoiceProps {
     user: User;
     onSignOut: () => void;
-    onNavigateToInvoices: () => void;
-    onNavigateToDashboard: () => void;
 }
 
 interface Client {
@@ -45,7 +45,8 @@ interface InvoiceData {
     status: 'draft' | 'sent' | 'paid';
 }
 
-const CreateInvoice = ({ user, onSignOut, onNavigateToInvoices, onNavigateToDashboard }: CreateInvoiceProps) => {
+const CreateInvoice = ({ user, onSignOut }: CreateInvoiceProps) => {
+    const navigate = useNavigate();
     const [clients, setClients] = useState<Client[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [saving, setSaving] = useState<boolean>(false);
@@ -266,7 +267,7 @@ const CreateInvoice = ({ user, onSignOut, onNavigateToInvoices, onNavigateToDash
 
             setSuccess('Invoice saved as draft successfully!');
             setTimeout(() => {
-                onNavigateToInvoices();
+                navigate(Destinations.INVOICES);
             }, 1500);
         } catch (error: any) {
             console.error('Error saving invoice:', error);
@@ -330,7 +331,7 @@ const CreateInvoice = ({ user, onSignOut, onNavigateToInvoices, onNavigateToDash
                 setSuccess('Invoice sent successfully!');
                 setShowSendModal(false);
                 setTimeout(() => {
-                    onNavigateToInvoices();
+                    navigate(Destinations.INVOICES);
                 }, 1500);
             }
         } catch (error: any) {
@@ -387,7 +388,7 @@ const CreateInvoice = ({ user, onSignOut, onNavigateToInvoices, onNavigateToDash
                 <div className="header-left">
                     <button
                         className="back-button"
-                        onClick={onNavigateToInvoices}
+                        onClick={() => navigate('/invoices')}
                         aria-label="Back to Invoices"
                     >
                         ← Back to Invoices

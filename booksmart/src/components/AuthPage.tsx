@@ -1,10 +1,7 @@
-import { useState, useEffect, FormEvent } from 'react';
+import React, { useState, useEffect, FormEvent } from 'react';
+import { useNavigate } from 'react-router';
 import { supabase } from '../lib/supabase';
 import './styles/AuthPage.css';
-
-interface AuthPageProps {
-    onNavigateToLanding: () => void;
-}
 
 interface WindowSize {
     width: number;
@@ -19,7 +16,8 @@ interface Message {
 type AuthMode = 'signup' | 'signin';
 type OAuthProvider = 'google' | 'apple';
 
-const AuthPage = ({ onNavigateToLanding }: AuthPageProps) => {
+const AuthPage = () => {
+    const navigate = useNavigate();
     const [email, setEmail] = useState<string>('');
     const [password, setPassword] = useState<string>('');
     const [confirmPassword, setConfirmPassword] = useState<string>('');
@@ -117,6 +115,10 @@ const AuthPage = ({ onNavigateToLanding }: AuthPageProps) => {
         setMessage({ text: '', type: '' });
     };
 
+    const handleNavigateToLanding = () => {
+        navigate('/');
+    };
+
     const isMobile: boolean = windowSize.width <= 768;
     const isTablet: boolean = windowSize.width <= 1024 && windowSize.width > 768;
 
@@ -124,8 +126,8 @@ const AuthPage = ({ onNavigateToLanding }: AuthPageProps) => {
         <div className="auth-fullscreen">
             {/* Back Button */}
             <button
-                className="back-button"
-                onClick={onNavigateToLanding}
+                className="auth-back-btn"
+                onClick={handleNavigateToLanding}
             >
                 ← Back to Home
             </button>

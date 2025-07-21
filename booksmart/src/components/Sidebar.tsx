@@ -1,23 +1,25 @@
+import React from 'react';
 import * as siteUtils from '../utils/siteUtils';
+import { Destinations } from '../lib/routes.ts';
 import { useNavigationStore } from '../stores/navigationStore';
+import { useNavigate, useLocation } from 'react-router';
 
-interface SidebarProps {
-    onNavigate?: (string) => void;
-}
-
-const Sidebar = ({
-    onNavigate
-}: SidebarProps) => {
+const Sidebar = () => {
     const windowSize = siteUtils.useWindowSize();
+    const navigate = useNavigate();
+    const location = useLocation();
 
     const {
         sidebarOpen,
-        setCurrentDashboardView,
         setSidebarOpen
     } = useNavigationStore();
 
+    const isActive = (path: string) => {
+        return location.pathname === `/${path}`;
+    };
+
     return (
-        < aside className={`dashboard-sidebar ${sidebarOpen ? 'open' : ''}`}>
+        <aside className={`dashboard-sidebar ${sidebarOpen ? 'open' : ''}`}>
             <div className="sidebar-header">
                 <div className="logo">
                     <div className="logo-icon"></div>
@@ -34,25 +36,37 @@ const Sidebar = ({
             </div>
 
             <nav className="sidebar-nav">
-                <a href="#" className="nav-item active">
+                <a
+                    href="#"
+                    className={`nav-item ${isActive('dashboard') ? 'active' : ''}`}
+                    onClick={(e) => {
+                        e.preventDefault();
+                        navigate(Destinations.DASHBOARD);
+                        setSidebarOpen(false);
+                    }}
+                >
                     <span className="nav-icon">📊</span>
                     Dashboard
                 </a>
                 <a
                     href="#"
-                    className="nav-item"
+                    className={`nav-item ${isActive('clients') ? 'active' : ''}`}
                     onClick={(e) => {
-                        onNavigate?.('clients')
-                    }}>
+                        e.preventDefault();
+                        navigate(Destinations.CLIENTS);
+                        setSidebarOpen(false);
+                    }}
+                >
                     <span className="nav-icon">👥</span>
                     Clients
                 </a>
                 <a
                     href="#"
-                    className="nav-item"
+                    className={`nav-item ${isActive('invoices') ? 'active' : ''}`}
                     onClick={(e) => {
                         e.preventDefault();
-                        onNavigate?.('invoices');
+                        navigate(Destinations.INVOICES);
+                        setSidebarOpen(false);
                     }}
                 >
                     <span className="nav-icon">🧾</span>
@@ -60,10 +74,13 @@ const Sidebar = ({
                 </a>
                 <a
                     href="#"
-                    className="nav-item"
+                    className={`nav-item ${isActive('time-tracking') ? 'active' : ''}`}
                     onClick={(e) => {
-                        onNavigate?.('time-tracking')
-                    }}>
+                        e.preventDefault();
+                        navigate(Destinations.TIME_TRACKING);
+                        setSidebarOpen(false);
+                    }}
+                >
                     <span className="nav-icon">🕓</span>
                     Time Tracking
                 </a>
@@ -71,20 +88,32 @@ const Sidebar = ({
                     <span className="nav-icon">📈</span>
                     Analytics
                 </a>
-                <a href="#" className="nav-item" onClick={(e) => {
-                    onNavigate?.('settings')
-                }}>
+                <a
+                    href="#"
+                    className={`nav-item ${isActive('settings') ? 'active' : ''}`}
+                    onClick={(e) => {
+                        e.preventDefault();
+                        navigate(Destinations.SETTINGS);
+                        setSidebarOpen(false);
+                    }}
+                >
                     <span className="nav-icon">⚙️</span>
                     Settings
                 </a>
-                <a href="#" className="nav-item" onClick={(e) => {
-                    onNavigate?.('billing')
-                }}>
+                <a
+                    href="#"
+                    className={`nav-item ${isActive('billing') ? 'active' : ''}`}
+                    onClick={(e) => {
+                        e.preventDefault();
+                        navigate(Destinations.BILLING);
+                        setSidebarOpen(false);
+                    }}
+                >
                     <span className="nav-icon">💳</span>
                     Billing
                 </a>
             </nav>
-        </aside >
+        </aside>
     );
 };
 

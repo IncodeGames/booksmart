@@ -1,5 +1,7 @@
+import React from 'react';
 import * as siteUtils from '../utils/siteUtils';
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router';
 import { supabase } from '../lib/supabase';
 import { useNavigationStore } from '../stores/navigationStore';
 import Sidebar from './Sidebar';
@@ -61,7 +63,6 @@ interface User {
 interface SettingsProps {
     user: User;
     onSignOut: () => void;
-    onNavigate?: (string) => void;
 }
 
 interface Profile {
@@ -80,7 +81,8 @@ interface Profile {
     currency: Currency;
 }
 
-const Settings = ({ user, onSignOut, onNavigate }: SettingsProps) => {
+const Settings = ({ user, onSignOut }: SettingsProps) => {
+    const navigate = useNavigate();
     const windowSize = siteUtils.useWindowSize();
     const { sidebarOpen, setSidebarOpen } = useNavigationStore();
 
@@ -193,9 +195,7 @@ const Settings = ({ user, onSignOut, onNavigate }: SettingsProps) => {
 
     return (
         <div className="dashboard">
-            <Sidebar
-                onNavigate={onNavigate}
-            />
+            <Sidebar />
 
             {/* Main Content */}
             <main className="dashboard-main">

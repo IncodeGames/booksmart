@@ -1,4 +1,6 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useNavigate } from 'react-router';
+import { Destinations } from '../lib/routes';
 import { supabase } from '../lib/supabase';
 import { EmailService } from '../services/emailService';
 import CreateInvoice from './CreateInvoice';
@@ -11,7 +13,6 @@ interface User {
 interface InvoicesProps {
     user: User;
     onSignOut: () => void;
-    onNavigateToDashboard: () => void;
 }
 
 interface Client {
@@ -37,10 +38,11 @@ interface Invoice {
     client?: Client;
 }
 
-type SortField = 'id' | 'amount' | 'due_date' | 'issued_date' | 'client_name';
+type SortField = 'id' | 'amount' | 'due_date' | 'issued_date' | 'client_name' | 'created_at';
 type SortDirection = 'asc' | 'desc';
 
-const Invoices = ({ user, onSignOut, onNavigateToDashboard }: InvoicesProps) => {
+const Invoices = ({ user, onSignOut }: InvoicesProps) => {
+    const navigate = useNavigate();
     const [invoices, setInvoices] = useState<Invoice[]>([]);
     const [clients, setClients] = useState<Client[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
@@ -344,8 +346,6 @@ const Invoices = ({ user, onSignOut, onNavigateToDashboard }: InvoicesProps) => 
                 <CreateInvoice
                     user={user}
                     onSignOut={onSignOut}
-                    onNavigateToInvoices={handleNavigateBackToInvoices}
-                    onNavigateToDashboard={onNavigateToDashboard}
                 />
             ) : (
                 <>
@@ -354,7 +354,7 @@ const Invoices = ({ user, onSignOut, onNavigateToDashboard }: InvoicesProps) => 
                         <div className="header-left">
                             <button
                                 className="back-button"
-                                onClick={onNavigateToDashboard}
+                                onClick={() => navigate(Destinations.DASHBOARD)}
                                 aria-label="Back to Dashboard"
                             >
                                 ← Back to Dashboard

@@ -1,7 +1,10 @@
+import React from 'react';
 import * as siteUtils from '../utils/siteUtils';
 import { useEffect } from 'react';
+import { useAuthStore } from '../stores/authStore';
 import { useDashboardStore } from '../stores/dashboardStore';
 import { useNavigationStore } from '../stores/navigationStore';
+import { useNavigate } from 'react-router';
 import Sidebar from './Sidebar';
 import './styles/Dashboard.css';
 
@@ -21,14 +24,8 @@ import {
     ResponsiveContainer
 } from 'recharts';
 
-interface User {
-    email?: string;
-}
-
 interface DashboardProps {
-    user: User;
     onSignOut: () => void;
-    onNavigate?: (string) => void;
 }
 
 interface Stat {
@@ -36,10 +33,13 @@ interface Stat {
     value: string;
 }
 
-const Dashboard = ({ user, onSignOut, onNavigate }: DashboardProps) => {
+const Dashboard = ({ onSignOut }: DashboardProps) => {
     const windowSize = siteUtils.useWindowSize();
+    const navigate = useNavigate();
 
     // Zustand stores
+    const { user } = useAuthStore();
+
     const {
         dashboardData,
         revenueExpenseData,
@@ -51,9 +51,7 @@ const Dashboard = ({ user, onSignOut, onNavigate }: DashboardProps) => {
     } = useDashboardStore();
 
     const {
-        currentDashboardView,
         sidebarOpen,
-        setCurrentDashboardView,
         setSidebarOpen
     } = useNavigationStore();
 
@@ -89,10 +87,6 @@ const Dashboard = ({ user, onSignOut, onNavigate }: DashboardProps) => {
         },
     ];
 
-    const navigateBackToDashboard = () => {
-        setCurrentDashboardView('dashboard');
-    };
-
     const EmptyState = ({ title, description }: { title: string; description: string }) => (
         <div className="empty-state">
             <div className="empty-state-icon">📊</div>
@@ -114,9 +108,7 @@ const Dashboard = ({ user, onSignOut, onNavigate }: DashboardProps) => {
 
     return (
         <div className="dashboard">
-            <Sidebar
-                onNavigate={onNavigate}
-            />
+            <Sidebar />
 
             {/* Main Content */}
             <main className="dashboard-main">
