@@ -1,17 +1,4 @@
-:root {
-    --primary-color: #5D5CED;
-    --primary-hover: #4F4EE8;
-    --secondary-color: #6366f1;
-    --text-color: #1f2937;
-    --text-light: #6b7280;
-    --white: #ffffff;
-    --background-light: #f9fafb;
-    --border-color: #e5e7eb;
-    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-}
+/* LandingPage.css (refactored to use base.css) */
 
 .landing-page {
     min-height: 100vh;
@@ -130,21 +117,7 @@
     color: var(--white);
 }
 
-.btn {
-    display: inline-flex;
-    justify-content: center;
-    align-items: center;
-    padding: 12px 24px;
-    font-size: 16px;
-    font-weight: 600;
-    border-radius: 12px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    border: none;
-    text-decoration: none;
-    gap: 8px;
-}
-
+/* Use .btn, .btn-primary, .btn-secondary, .btn-large from base.css */
 .btn-login {
     background: rgba(255, 255, 255, 0.2);
     color: var(--white);
@@ -155,34 +128,6 @@
 .btn-login:hover {
     background: rgba(255, 255, 255, 0.3);
     transform: translateY(-1px);
-}
-
-.btn-primary {
-    background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
-    color: var(--white);
-    box-shadow: var(--shadow-lg);
-}
-
-.btn-primary:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-xl);
-}
-
-.btn-secondary {
-    background: rgba(255, 255, 255, 0.2);
-    color: var(--white);
-    border: 2px solid rgba(255, 255, 255, 0.3);
-    backdrop-filter: blur(10px);
-}
-
-.btn-secondary:hover {
-    background: rgba(255, 255, 255, 0.3);
-    transform: translateY(-1px);
-}
-
-.btn-large {
-    padding: 16px 32px;
-    font-size: 18px;
 }
 
 .landing-main {
@@ -369,8 +314,7 @@
 }
 
 .section-title {
-    font-size: clamp(28px, 5vw, 40px);
-    font-weight: 700;
+    /* Use .section-title from base.css */
     color: var(--white);
     margin-bottom: 60px;
 }

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { supabase } from '../lib/supabase';
 import Sidebar from './Sidebar';
+import './styles/base.css';
 import './styles/Clients.css';
 
 interface User {
@@ -43,6 +44,7 @@ const Clients = ({ user, onSignOut }: ClientsProps) => {
     });
     const [creating, setCreating] = useState<boolean>(false);
     const [error, setError] = useState<string>('');
+    const [search, setSearch] = useState<string>('');
 
     useEffect(() => {
         fetchClients();
@@ -152,124 +154,155 @@ const Clients = ({ user, onSignOut }: ClientsProps) => {
         navigate('/dashboard');
     };
 
+    // Filtered clients based on search
+    const filteredClients = clients.filter((client) => {
+        const q = search.toLowerCase();
+        return (
+            client.name.toLowerCase().includes(q) ||
+            client.email.toLowerCase().includes(q) ||
+            (client.phone && client.phone.toLowerCase().includes(q)) ||
+            (client.company && client.company.toLowerCase().includes(q))
+        );
+    });
+
     return (
         <div className="clients-page">
             <Sidebar />
-            {/* Header */}
-            <header className="clients-header">
-                <div className="header-left">
-                    <h1>Clients</h1>
-                </div>
-
-                <div className="header-right">
-                    <button
-                        className="create-client-btn"
-                        onClick={() => setShowCreateModal(true)}
-                    >
-                        + New Client
-                    </button>
-
-                    <div className="user-menu">
-                        <div className="user-avatar">
-                            {user.email?.charAt(0).toUpperCase()}
-                        </div>
-                        <div className="user-info">
-                            <span className="user-name">{user.email}</span>
-                            <button className="sign-out-btn" onClick={onSignOut}>
-                                Sign Out
-                            </button>
-                        </div>
+            <div className="page-content">
+                {/* Header */}
+                <header className="clients-header">
+                    <div className="header-left">
+                        <h1>Clients</h1>
                     </div>
-                </div>
-            </header>
 
-            {/* Main Content */}
-            <main className="clients-main">
-                {error && (
-                    <div className="error-message">
-                        {error}
-                    </div>
-                )}
+                    <div className="header-right">
+                        <button
+                            className="create-client-btn"
+                            onClick={() => setShowCreateModal(true)}
+                        >
+                            + New Client
+                        </button>
 
-                {loading ? (
-                    <div className="loading-container">
-                        <div className="loading-spinner"></div>
-                        <p>Loading clients...</p>
-                    </div>
-                ) : (
-                    <div className="clients-container">
-                        <div className="clients-summary">
-                            <div className="summary-card">
-                                <h3>Total Clients</h3>
-                                <div className="summary-value">{clients.length}</div>
+                        <div className="user-menu">
+                            <div className="user-avatar">
+                                {user.email?.charAt(0).toUpperCase()}
                             </div>
-                            <div className="summary-card">
-                                <h3>Total Outstanding</h3>
-                                <div className="summary-value">
-                                    {formatCurrency(clients.reduce((sum, client) => sum + client.outstanding_amount, 0))}
-                                </div>
+                            <div className="user-info">
+                                <span className="user-name">{user.email}</span>
+                                <button className="sign-out-btn" onClick={onSignOut}>
+                                    Sign Out
+                                </button>
                             </div>
                         </div>
+                    </div>
+                </header>
 
-                        <div className="clients-list">
-                            {clients.length === 0 ? (
-                                <div className="empty-state">
-                                    <h3>No clients yet</h3>
-                                    <p>Create your first client to get started</p>
-                                    <button
-                                        className="create-client-btn"
-                                        onClick={() => setShowCreateModal(true)}
-                                    >
-                                        + Create Client
-                                    </button>
+                {/* Main Content */}
+                <main className="clients-main">
+                    {error && (
+                        <div className="error-message">
+                            {error}
+                        </div>
+                    )}
+
+                    {loading ? (
+                        <div className="loading-container">
+                            <div className="loading-spinner"></div>
+                            <p>Loading clients...</p>
+                        </div>
+                    ) : (
+                        <div className="clients-container">
+                            <div className="clients-summary">
+                                <div className="summary-card">
+                                    <h3>Total Clients</h3>
+                                    <div className="summary-value">{clients.length}</div>
                                 </div>
-                            ) : (
-                                <div className="clients-grid">
-                                    {clients.map((client) => (
-                                        <div key={client.id} className="client-card">
-                                            <div className="client-header">
-                                                <div className="client-avatar">
-                                                    {client.name.charAt(0).toUpperCase()}
-                                                </div>
-                                                <div className="client-info">
-                                                    <h3>{client.name}</h3>
-                                                    {client.company && (
-                                                        <p className="client-company">{client.company}</p>
-                                                    )}
-                                                </div>
-                                            </div>
+                                <div className="summary-card">
+                                    <h3>Total Outstanding</h3>
+                                    <div className="summary-value">
+                                        {formatCurrency(clients.reduce((sum, client) => sum + client.outstanding_amount, 0))}
+                                    </div>
+                                </div>
+                            </div>
+                            {/* Search Bar */}
+                            <div style={{ maxWidth: 400, marginBottom: 32 }}>
+                                <input
+                                    type="text"
+                                    placeholder="Search clients..."
+                                    value={search}
+                                    onChange={e => setSearch(e.target.value)}
+                                    style={{
+                                        width: '100%',
+                                        padding: '12px',
+                                        border: '1px solid var(--border-color)',
+                                        borderRadius: 8,
+                                        fontSize: 16,
+                                        marginBottom: 0,
+                                        background: 'var(--white)'
+                                    }}
+                                />
+                            </div>
 
-                                            <div className="client-details">
-                                                <div className="detail-item">
-                                                    <span className="detail-label">Email:</span>
-                                                    <span className="detail-value">{client.email}</span>
-                                                </div>
-                                                {client.phone && (
-                                                    <div className="detail-item">
-                                                        <span className="detail-label">Phone:</span>
-                                                        <span className="detail-value">{client.phone}</span>
+                            <div className="clients-list">
+                                {clients.length === 0 ? (
+                                    <div className="empty-state">
+                                        <h3>No clients yet</h3>
+                                        <p>Create your first client to get started</p>
+                                        <button
+                                            className="create-client-btn"
+                                            onClick={() => setShowCreateModal(true)}
+                                        >
+                                            + Create Client
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div className="clients-grid">
+                                        {clients.map((client) => (
+                                            <div key={client.id} className="client-card">
+                                                <div className="client-header">
+                                                    <div className="client-avatar">
+                                                        {client.name.charAt(0).toUpperCase()}
                                                     </div>
-                                                )}
-                                                <div className="detail-item">
-                                                    <span className="detail-label">Created:</span>
-                                                    <span className="detail-value">{formatDate(client.created_at)}</span>
+                                                    <div className="client-info">
+                                                        <h3>{client.name}</h3>
+                                                        {client.company && (
+                                                            <p className="client-company">{client.company}</p>
+                                                        )}
+                                                    </div>
+                                                </div>
+
+                                                <div className="client-details">
+                                                    <div className="detail-item">
+                                                        <span className="detail-label">Email:</span>
+                                                        <span className="detail-value">{client.email}</span>
+                                                    </div>
+                                                    {client.phone && (
+                                                        <div className="detail-item">
+                                                            <span className="detail-label">Phone:</span>
+                                                            <span className="detail-value">{client.phone}</span>
+                                                        </div>
+                                                    )}
+                                                    <div className="detail-item">
+                                                        <span className="detail-label">Created:</span>
+                                                        <span className="detail-value">{formatDate(client.created_at)}</span>
+                                                    </div>
+                                                </div>
+
+                                                <div className="client-outstanding">
+                                                    <span className="outstanding-label">Outstanding:</span>
+                                                    <span className={`outstanding-amount ${client.outstanding_amount > 0 ? 'has-outstanding' : ''}`}>
+                                                        {formatCurrency(client.outstanding_amount)}
+                                                    </span>
                                                 </div>
                                             </div>
-
-                                            <div className="client-outstanding">
-                                                <span className="outstanding-label">Outstanding:</span>
-                                                <span className={`outstanding-amount ${client.outstanding_amount > 0 ? 'has-outstanding' : ''}`}>
-                                                    {formatCurrency(client.outstanding_amount)}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
                         </div>
-                    </div>
-                )}
-            </main>
+                    )}
+                </main>
+            </div>
 
             {/* Create Client Modal */}
             {showCreateModal && (

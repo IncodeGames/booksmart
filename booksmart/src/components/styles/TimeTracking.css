@@ -1,8 +1,15 @@
 .time-tracking-page {
     min-height: 100vh;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    padding: 2rem;
     position: relative;
+}
+
+.time-tracking-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    margin-left: 280px;
+    transition: margin-left 0.3s ease;
 }
 
 .page-header {
@@ -82,6 +89,10 @@
         padding: 1rem;
     }
 
+    .invoices-content {
+        margin-left: 0;
+    }
+
     .page-header {
         flex-direction: column;
         text-align: center;
@@ -95,4 +106,8 @@
         width: 100%;
         justify-content: center;
     }
+}
+
+.sidebar-closed .invoices-content {
+    margin-left: 0;
 }

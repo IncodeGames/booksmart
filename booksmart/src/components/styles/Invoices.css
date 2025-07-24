@@ -1,9 +1,30 @@
 /* Invoices Page Styles */
 .invoices-page {
     display: flex;
-    flex-direction: column;
     height: 100vh;
     background: var(--background);
+}
+
+/* Dashboard Layout Integration */
+.invoices-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    margin-left: 280px;
+    transition: margin-left 0.3s ease;
+}
+
+/* Responsive sidebar adjustments */
+@media (max-width: 768px) {
+    .invoices-content {
+        margin-left: 0;
+        /* No margin on mobile when sidebar is overlay */
+    }
+}
+
+/* When sidebar is closed on desktop */
+.sidebar-closed .invoices-content {
+    margin-left: 0;
 }
 
 /* Header */
@@ -16,6 +37,7 @@
     align-items: center;
     padding: 0 32px;
     box-shadow: var(--shadow-sm);
+    flex-shrink: 0;
 }
 
 .header-left {
@@ -613,6 +635,11 @@
 
 /* Responsive Design */
 @media (max-width: 768px) {
+    .invoices-content {
+        margin-left: 0;
+        /* Remove margin on mobile */
+    }
+
     .invoices-header {
         padding: 0 20px;
     }

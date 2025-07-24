@@ -6,6 +6,7 @@ import { useDashboardStore } from '../stores/dashboardStore';
 import { useNavigationStore } from '../stores/navigationStore';
 import { useNavigate } from 'react-router';
 import Sidebar from './Sidebar';
+import './styles/base.css';
 import './styles/Dashboard.css';
 
 import {

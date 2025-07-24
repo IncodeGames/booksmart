@@ -4,7 +4,9 @@ import { TimeEntry, Client, TimerState } from '../types';
 import TimerModal from '../components/TimerModal';
 import TimeEntryList from '../components/TimeEntryList';
 import { Play, Clock } from 'lucide-react';
+import Sidebar from './Sidebar';
 import './styles/TimeTracking.css';
+import './styles/base.css';
 
 const TimeTrackingPage = () => {
     const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([]);
@@ -130,36 +132,39 @@ const TimeTrackingPage = () => {
 
     return (
         <div className="time-tracking-page">
-            <div className="page-header">
-                <h1>
-                    <Clock className="header-icon" />
-                    Time Tracking
-                </h1>
-                <button
-                    className="start-timer-btn"
-                    onClick={startTimer}
-                    disabled={timer.isRunning}
-                >
-                    <Play size={20} />
-                    Start Timer
-                </button>
+            <Sidebar />
+            <div className="page-content">
+                <div className="page-header">
+                    <h1>
+                        <Clock className="header-icon" />
+                        Time Tracking
+                    </h1>
+                    <button
+                        className="start-timer-btn"
+                        onClick={startTimer}
+                        disabled={timer.isRunning}
+                    >
+                        <Play size={20} />
+                        Start Timer
+                    </button>
+                </div>
+
+                <TimeEntryList
+                    timeEntries={timeEntries}
+                    onRefresh={fetchTimeEntries}
+                />
+
+                <TimerModal
+                    isOpen={isModalOpen || timer.isRunning}
+                    timer={timer}
+                    clients={clients}
+                    onClientSelect={(client) => setTimer(prev => ({ ...prev, client }))}
+                    onDescriptionChange={(description) => setTimer(prev => ({ ...prev, description }))}
+                    onLogTime={logTime}
+                    onDiscard={discardTimer}
+                    formatTime={formatTime}
+                />
             </div>
-
-            <TimeEntryList
-                timeEntries={timeEntries}
-                onRefresh={fetchTimeEntries}
-            />
-
-            <TimerModal
-                isOpen={isModalOpen || timer.isRunning}
-                timer={timer}
-                clients={clients}
-                onClientSelect={(client) => setTimer(prev => ({ ...prev, client }))}
-                onDescriptionChange={(description) => setTimer(prev => ({ ...prev, description }))}
-                onLogTime={logTime}
-                onDiscard={discardTimer}
-                formatTime={formatTime}
-            />
         </div>
     );
 };

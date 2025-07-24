@@ -4,6 +4,8 @@ import { Destinations } from '../lib/routes';
 import { supabase } from '../lib/supabase';
 import { EmailService } from '../services/emailService';
 import CreateInvoice from './CreateInvoice';
+import Sidebar from './Sidebar';
+import './styles/base.css'
 import './styles/Invoices.css'
 
 interface User {
@@ -290,7 +292,7 @@ const Invoices = ({ user, onSignOut }: InvoicesProps) => {
         setEmailingInvoice(invoice);
         setEmailData({
             subject: `Invoice #${invoice.id} from Your Company`,
-            message: `Dear ${invoice.client.name},\n\nPlease find attached your invoice for $${invoice.amount.toFixed(2)}.\n\nThank you for your business!`
+            message: `Dear ${invoice.client.name},\n\nPlease find attached your invoice for ${invoice.amount.toFixed(2)}.\n\nThank you for your business!`
         });
         setShowEmailModal(true);
         setContextMenu(null);
@@ -342,23 +344,17 @@ const Invoices = ({ user, onSignOut }: InvoicesProps) => {
 
     return (
         <div className="invoices-page">
+            <Sidebar />
             {showCreateInvoice ? (
                 <CreateInvoice
                     user={user}
                     onSignOut={onSignOut}
                 />
             ) : (
-                <>
+                <div className="page-content">
                     {/* Header */}
                     <header className="invoices-header">
                         <div className="header-left">
-                            <button
-                                className="back-button"
-                                onClick={() => navigate(Destinations.DASHBOARD)}
-                                aria-label="Back to Dashboard"
-                            >
-                                ← Back to Dashboard
-                            </button>
                             <h1>Invoices</h1>
                         </div>
 
@@ -685,7 +681,7 @@ const Invoices = ({ user, onSignOut }: InvoicesProps) => {
                             </div>
                         </div>
                     )}
-                </>
+                </div>
             )}
         </div>
     );
