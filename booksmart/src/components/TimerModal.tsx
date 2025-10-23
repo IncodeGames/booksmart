@@ -5,10 +5,12 @@ import './styles/TimerModal.css'
 
 interface TimerModalProps {
     isOpen: boolean;
+    isExpanded?: boolean;
     timer: TimerState;
     clients: Client[];
     onClientSelect: (client: Client | null) => void;
     onDescriptionChange: (description: string) => void;
+    onToggleExpand?: () => void;
     onLogTime: () => void;
     onDiscard: () => void;
     formatTime: (seconds: number) => string;
@@ -16,15 +18,20 @@ interface TimerModalProps {
 
 const TimerModal = ({
     isOpen,
+    isExpanded: externalIsExpanded,
     timer,
     clients,
     onClientSelect,
     onDescriptionChange,
+    onToggleExpand,
     onLogTime,
     onDiscard,
     formatTime,
 }: TimerModalProps) => {
-    const [isExpanded, setIsExpanded] = useState(false);
+    // Use internal state if no external control is provided
+    const [internalIsExpanded, setInternalIsExpanded] = useState(false);
+    const isExpanded = externalIsExpanded !== undefined ? externalIsExpanded : internalIsExpanded;
+    
     const [showClientDropdown, setShowClientDropdown] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const dropdownRef = useRef<HTMLDivElement>(null);
@@ -53,7 +60,11 @@ const TimerModal = ({
     const handleHeaderClick = (e: React.MouseEvent) => {
         // Prevent expansion toggle when clicking buttons
         if ((e.target as HTMLElement).closest('button')) return;
-        setIsExpanded(!isExpanded);
+        if (onToggleExpand) {
+            onToggleExpand();
+        } else {
+            setInternalIsExpanded(!isExpanded);
+        }
     };
 
     const handleClientSelect = (client: Client | null) => {
@@ -77,7 +88,11 @@ const TimerModal = ({
                     className="timer-modal__toggle"
                     onClick={(e) => {
                         e.stopPropagation();
-                        setIsExpanded(!isExpanded);
+                        if (onToggleExpand) {
+                            onToggleExpand();
+                        } else {
+                            setInternalIsExpanded(!isExpanded);
+                        }
                     }}
                     aria-label={isExpanded ? "Collapse timer" : "Expand timer"}
                 >

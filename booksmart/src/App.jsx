@@ -13,6 +13,7 @@ import Invoices from './components/Invoices.tsx';
 import Settings from './components/Settings.tsx';
 import TimeTracking from './components/TimeTracking.tsx';
 import Billing from './modules/billing/BillingPage.tsx';
+import GlobalTimerModal from './components/GlobalTimerModal.tsx';
 import './App.css';
 
 function App() {
@@ -23,11 +24,14 @@ function App() {
     // Get initial session
     const getSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      setUser(session?.user ?? null);
+      if (user === null || user.id !== session?.user.id) {
 
-      if (session?.user) {
-        await checkProfile(session.user.id);
-        navigate(Destinations.DASHBOARD);
+        setUser(session?.user ?? null);
+
+        if (user) {
+          await checkProfile(session.user.id);
+          navigate(Destinations.DASHBOARD);
+        }
       }
 
       setLoading(false);
@@ -39,14 +43,17 @@ function App() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         setTimeout(async () => {
-          setUser(session?.user ?? null);
+          if (user !== session?.user) {
 
-          if (event === "SIGNED_IN") {
-            await checkProfile(session.user.id)
-            navigate(Destinations.DASHBOARD);
+            setUser(session?.user ?? null);
 
-          } else if (event === 'SIGNED_OUT') {
-            setHasProfile(false);
+            if (event === "SIGNED_IN") {
+              await checkProfile(session.user.id)
+              navigate(Destinations.DASHBOARD);
+
+            } else if (event === 'SIGNED_OUT') {
+              setHasProfile(false);
+            }
           }
         }, 0)
       }
@@ -109,6 +116,9 @@ function App() {
         } />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      
+      {/* Global Timer Modal - persists across all authenticated pages */}
+      {user && <GlobalTimerModal />}
     </div>
   );
 }
