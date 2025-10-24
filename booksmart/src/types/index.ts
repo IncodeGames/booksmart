@@ -28,3 +28,16 @@ export interface TimerState {
     client?: Client;
     description: string;
 }
+
+export interface Expense {
+    id: string;
+    user_id?: string;
+    category: string;
+    amount: number;
+    description?: string;
+    date: string;
+    vendor?: string;
+    payment_method?: string;
+    receipt_url?: string;
+    created_at?: string;
+}

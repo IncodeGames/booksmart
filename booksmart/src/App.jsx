@@ -12,6 +12,7 @@ import Clients from './components/Clients.tsx';
 import Invoices from './components/Invoices.tsx';
 import Settings from './components/Settings.tsx';
 import TimeTracking from './components/TimeTracking.tsx';
+import Expenses from './components/Expenses.tsx';
 import Billing from './modules/billing/BillingPage.tsx';
 import GlobalTimerModal from './components/GlobalTimerModal.tsx';
 import './App.css';
@@ -97,6 +98,13 @@ function App() {
           <RequireAuth>
             <RequireProfile>
               <TimeTracking user={user} onSignOut={signOut} />
+            </RequireProfile>
+          </RequireAuth>
+        } />
+        <Route path={Destinations.EXPENSES} element={
+          <RequireAuth>
+            <RequireProfile>
+              <Expenses user={user} onSignOut={signOut} />
             </RequireProfile>
           </RequireAuth>
         } />
