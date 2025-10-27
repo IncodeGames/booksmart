@@ -88,36 +88,71 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
         try {
             set({ loading: true, error: initialError });
 
-            // Fetch revenue and expense data
-            const { data: revenueExpenses, error: reError } = await supabase
-                .from('financial_data')
-                .select('month, revenue, expenses')
-                .order('month', { ascending: false });
-
-            if (reError) throw reError;
-
-            // Fetch invoice data
+            // Fetch invoice data for revenue
             const { data: invoices, error: invoiceError } = await supabase
                 .from('invoices')
-                .select('invoice_status, amount');
+                .select('invoice_status, amount, created_at');
 
             if (invoiceError) throw invoiceError;
 
-            // Process financial data
-            let totalRevenue = 0;
-            let totalExpenses = 0;
-            const profits: ProfitData[] = [];
+            // Fetch expense data
+            const { data: expenses, error: expenseError } = await supabase
+                .from('expenses')
+                .select('amount, date');
 
-            if (revenueExpenses && revenueExpenses.length > 0) {
-                for (const item of revenueExpenses) {
-                    totalRevenue += item.revenue;
-                    totalExpenses += item.expenses;
-                    profits.push({
-                        month: item.month,
-                        profit: item.revenue - item.expenses
-                    });
+            if (expenseError) throw expenseError;
+
+            // Calculate total revenue from invoices
+            let totalRevenue = 0;
+            if (invoices && invoices.length > 0) {
+                totalRevenue = invoices.reduce((sum, invoice) => sum + invoice.amount, 0);
+            }
+
+            // Calculate total expenses
+            let totalExpenses = 0;
+            if (expenses && expenses.length > 0) {
+                totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+            }
+
+            // Group data by month for charts
+            const monthlyData = new Map<string, { revenue: number; expenses: number }>();
+
+            // Process invoices by month
+            if (invoices && invoices.length > 0) {
+                for (const invoice of invoices) {
+                    const date = new Date(invoice.created_at);
+                    const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+                    const existing = monthlyData.get(monthKey) || { revenue: 0, expenses: 0 };
+                    existing.revenue += invoice.amount;
+                    monthlyData.set(monthKey, existing);
                 }
             }
+
+            // Process expenses by month
+            if (expenses && expenses.length > 0) {
+                for (const expense of expenses) {
+                    const date = new Date(expense.date);
+                    const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+                    const existing = monthlyData.get(monthKey) || { revenue: 0, expenses: 0 };
+                    existing.expenses += expense.amount;
+                    monthlyData.set(monthKey, existing);
+                }
+            }
+
+            // Convert to array and sort by month
+            const revenueExpenses: RevenueExpenseData[] = Array.from(monthlyData.entries())
+                .map(([month, data]) => ({
+                    month,
+                    revenue: data.revenue,
+                    expenses: data.expenses
+                }))
+                .sort((a, b) => b.month.localeCompare(a.month));
+
+            // Calculate profit data
+            const profits: ProfitData[] = revenueExpenses.map(item => ({
+                month: item.month,
+                profit: item.revenue - item.expenses
+            }));
 
             // Process invoice data
             let paidAmount = 0;
@@ -153,7 +188,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
                     paidAmount,
                     unpaidAmount
                 },
-                revenueExpenseData: revenueExpenses || [],
+                revenueExpenseData: revenueExpenses,
                 profitData: profits,
                 invoiceData: invoiceChartData,
                 loading: false

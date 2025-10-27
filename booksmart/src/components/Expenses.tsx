@@ -62,20 +62,10 @@ const ExpensesPage = () => {
 
     const handleAddExpense = async (expenseData: Omit<Expense, 'id' | 'created_at'>) => {
         try {
-            // Get user ID from auth
-            const { data: { user } } = await supabase.auth.getUser();
-
-            if (!user) {
-                console.error('User not authenticated');
-                return false;
-            }
-
+            // TODO: Add user_id from auth context
             const { data, error } = await supabase
                 .from('expenses')
-                .insert([{
-                    ...expenseData,
-                    user_id: user.id  // Add user_id
-                }])
+                .insert([expenseData])
                 .select()
                 .single();
 
@@ -84,6 +74,7 @@ const ExpensesPage = () => {
                 return false;
             }
 
+            // Refresh the list
             await fetchExpenses();
             setIsModalOpen(false);
             return true;
