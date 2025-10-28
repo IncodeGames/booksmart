@@ -41,3 +41,35 @@ export interface Expense {
     receipt_url?: string;
     created_at?: string;
 }
+
+
+export interface Invoice {
+    id: string | number;
+    amount: number;
+    created_at: string;
+    invoice_status: 'unpaid' | 'paid' | 'overdue';
+    client_id: string;
+    due_date: string;
+    issued_date: string;
+    user_id?: string;
+    clients?: {
+        company_name?: string;
+        contact_name?: string;
+    };
+    client?: Client;
+}
+
+export interface LedgerEntry {
+    id: string;
+    date: Date;
+    type: 'expense' | 'invoice' | 'payment';
+    description: string;
+    vendor?: string;
+    client?: string;
+    category?: string;
+    debit: number;
+    credit: number;
+    balance?: number;
+    status?: string;
+    reference?: string;
+}

@@ -1,21 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { supabase } from '../../lib/supabase';
+import React, { useEffect } from 'react';
+import { useLedgerStore } from '../../stores/ledgerStore';
+import DropdownButton, { DropdownOption } from '../DropdownButton';
 import '../styles/GeneralLedger.css';
-
-interface LedgerEntry {
-  id: string;
-  date: Date;
-  type: 'expense' | 'invoice' | 'payment';
-  description: string;
-  vendor?: string;
-  client?: string;
-  category?: string;
-  debit: number;
-  credit: number;
-  balance?: number;
-  status?: string;
-  reference?: string;
-}
 
 interface GeneralLedgerProps {
   onBack: () => void;
@@ -25,157 +11,29 @@ interface GeneralLedgerProps {
  * General Ledger component that displays all financial transactions
  * Shows expenses, invoices, and payments in chronological order with running balance
  */
-const GeneralLedger = (onBack: GeneralLedgerProps) => {
-  const [entries, setEntries] = useState<LedgerEntry[]>([]);
-  const [filteredEntries, setFilteredEntries] = useState<LedgerEntry[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [dateRange, setDateRange] = useState({
-    startDate: '',
-    endDate: '',
-  });
-  const [typeFilter, setTypeFilter] = useState<string>('all');
-  const [searchTerm, setSearchTerm] = useState('');
+const GeneralLedger = ({ onBack }: GeneralLedgerProps) => {
+  const {
+    filteredEntries,
+    isLoading,
+    error,
+    dateRange,
+    typeFilter,
+    searchTerm,
+    setDateRange,
+    setTypeFilter,
+    setSearchTerm,
+    fetchLedgerData,
+    applyFilters,
+    getTotals
+  } = useLedgerStore();
 
   useEffect(() => {
     fetchLedgerData();
-  }, []);
+  }, [fetchLedgerData]);
 
   useEffect(() => {
     applyFilters();
-  }, [entries, dateRange, typeFilter, searchTerm]);
-
-  const fetchLedgerData = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        throw new Error('User not authenticated');
-      }
-
-      // Fetch expenses
-      const { data: expenses, error: expensesError } = await supabase
-        .from('expenses')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('date', { ascending: false });
-
-      if (expensesError) throw expensesError;
-
-      // Fetch invoices with client information
-      const { data: invoices, error: invoicesError } = await supabase
-        .from('invoices')
-        .select(`
-          *,
-          clients (
-            company_name,
-            contact_name
-          )
-        `)
-        .eq('user_id', user.id)
-        .order('issued_date', { ascending: false });
-
-      if (invoicesError) throw invoicesError;
-
-      // For now, we'll create mock payment entries since there's no payments table
-      // In a real implementation, you'd fetch from a payments table
-      const mockPayments = invoices
-        ?.filter(invoice => invoice.invoice_status === 'paid')
-        .map(invoice => ({
-          id: `payment-${invoice.id}`,
-          date: new Date(invoice.issued_date || invoice.created_at),
-          type: 'payment' as const,
-          description: `Payment received for Invoice #${invoice.id}`,
-          client: invoice.clients?.company_name || invoice.clients?.contact_name || 'Unknown Client',
-          debit: 0,
-          credit: Number(invoice.amount),
-          status: 'received',
-          reference: `INV-${invoice.id}`,
-        })) || [];
-
-      // Convert expenses to ledger entries
-      const expenseEntries: LedgerEntry[] = expenses?.map(expense => ({
-        id: expense.id,
-        date: new Date(expense.date),
-        type: 'expense',
-        description: expense.description || `${expense.category} expense`,
-        vendor: expense.vendor || undefined,
-        category: expense.category,
-        debit: Number(expense.amount),
-        credit: 0,
-        reference: expense.id.slice(0, 8),
-      })) || [];
-
-      // Convert invoices to ledger entries
-      const invoiceEntries: LedgerEntry[] = invoices?.map(invoice => ({
-        id: `invoice-${invoice.id}`,
-        date: new Date(invoice.issued_date || invoice.created_at),
-        type: 'invoice',
-        description: `Invoice #${invoice.id}`,
-        client: invoice.clients?.company_name || invoice.clients?.contact_name || 'Unknown Client',
-        debit: 0,
-        credit: Number(invoice.amount),
-        status: invoice.invoice_status,
-        reference: `INV-${invoice.id}`,
-      })) || [];
-
-      // Combine all entries and sort by date (most recent first)
-      const allEntries = [...expenseEntries, ...invoiceEntries, ...mockPayments]
-        .sort((a, b) => b.date.getTime() - a.date.getTime());
-
-      // Calculate running balance (simplified - in reality this would be more complex)
-      let runningBalance = 0;
-      const entriesWithBalance = allEntries.map(entry => {
-        runningBalance += entry.credit - entry.debit;
-        return {
-          ...entry,
-          balance: runningBalance,
-        };
-      });
-
-      setEntries(entriesWithBalance);
-    } catch (error) {
-      console.error('Error fetching ledger data:', error);
-      setError('Failed to load general ledger data');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const applyFilters = () => {
-    let filtered = [...entries];
-
-    // Date range filter
-    if (dateRange.startDate) {
-      const startDate = new Date(dateRange.startDate);
-      filtered = filtered.filter(entry => entry.date >= startDate);
-    }
-    if (dateRange.endDate) {
-      const endDate = new Date(dateRange.endDate);
-      endDate.setHours(23, 59, 59, 999); // End of day
-      filtered = filtered.filter(entry => entry.date <= endDate);
-    }
-
-    // Type filter
-    if (typeFilter !== 'all') {
-      filtered = filtered.filter(entry => entry.type === typeFilter);
-    }
-
-    // Search filter
-    if (searchTerm) {
-      const term = searchTerm.toLowerCase();
-      filtered = filtered.filter(entry =>
-        entry.description.toLowerCase().includes(term) ||
-        entry.vendor?.toLowerCase().includes(term) ||
-        entry.client?.toLowerCase().includes(term) ||
-        entry.category?.toLowerCase().includes(term)
-      );
-    }
-
-    setFilteredEntries(filtered);
-  };
+  }, [dateRange, typeFilter, searchTerm, applyFilters]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -210,15 +68,65 @@ const GeneralLedger = (onBack: GeneralLedgerProps) => {
     }
   };
 
-  const getTotals = () => {
-    const totalDebits = filteredEntries.reduce((sum, entry) => sum + entry.debit, 0);
-    const totalCredits = filteredEntries.reduce((sum, entry) => sum + entry.credit, 0);
-    const netAmount = totalCredits - totalDebits;
+  const { totalDebits, totalCredits, netAmount } = getTotals();
 
-    return { totalDebits, totalCredits, netAmount };
+  // Export to CSV functionality
+  const exportToCSV = () => {
+    const headers = ['Date', 'Type', 'Description', 'Vendor/Client', 'Reference', 'Debit', 'Credit', 'Balance'];
+    
+    const csvData = filteredEntries.map(entry => [
+      formatDate(entry.date),
+      entry.type,
+      entry.description,
+      entry.vendor || entry.client || '',
+      entry.reference || '',
+      entry.debit > 0 ? entry.debit.toFixed(2) : '',
+      entry.credit > 0 ? entry.credit.toFixed(2) : '',
+      entry.balance?.toFixed(2) || ''
+    ]);
+
+    // Add totals row
+    csvData.push([]);
+    csvData.push(['', '', '', '', 'TOTALS:', totalDebits.toFixed(2), totalCredits.toFixed(2), netAmount.toFixed(2)]);
+
+    // Convert to CSV string
+    const csvContent = [
+      headers.join(','),
+      ...csvData.map(row => row.map(cell => `"${cell}"`).join(','))
+    ].join('\n');
+
+    // Create and download the file
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `general_ledger_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
-  const { totalDebits, totalCredits, netAmount } = getTotals();
+  // Print functionality
+  const handlePrint = () => {
+    window.print();
+  };
+
+  // Dropdown options for actions
+  const actionOptions: DropdownOption[] = [
+    {
+      label: 'Export as CSV',
+      value: 'export-csv',
+      icon: '📊',
+      onClick: exportToCSV
+    },
+    {
+      label: 'Print',
+      value: 'print',
+      icon: '🖨️',
+      onClick: handlePrint
+    }
+  ];
 
   if (isLoading) {
     return (
@@ -232,15 +140,24 @@ const GeneralLedger = (onBack: GeneralLedgerProps) => {
   return (
     <div className="general-ledger">
       <div className="general-ledger-header">
-        <div className="header-top">
-          <button className="back-button" onClick={onBack}>
-            ← Back to Reports
-          </button>
-          <h1 className="page-title">General Ledger</h1>
+        <button className="back-button" onClick={onBack}>
+          ← Back to Reports
+        </button>
+        <div className="header-content">
+          <div className="header-title-section">
+            <h1 className="page-title">General Ledger</h1>
+            <DropdownButton
+              label="Actions"
+              icon="⚙️"
+              options={actionOptions}
+              variant="secondary"
+              className="header-actions"
+            />
+          </div>
+          <p className="page-subtitle">
+            Complete record of all financial transactions organized by date
+          </p>
         </div>
-        <p className="page-subtitle">
-          Complete record of all financial transactions organized by date
-        </p>
       </div>
 
       {error && (
@@ -259,7 +176,7 @@ const GeneralLedger = (onBack: GeneralLedgerProps) => {
               type="date"
               id="startDate"
               value={dateRange.startDate}
-              onChange={(e) => setDateRange(prev => ({ ...prev, startDate: e.target.value }))}
+              onChange={(e) => setDateRange({ ...dateRange, startDate: e.target.value })}
             />
           </div>
 
@@ -269,7 +186,7 @@ const GeneralLedger = (onBack: GeneralLedgerProps) => {
               type="date"
               id="endDate"
               value={dateRange.endDate}
-              onChange={(e) => setDateRange(prev => ({ ...prev, endDate: e.target.value }))}
+              onChange={(e) => setDateRange({ ...dateRange, endDate: e.target.value })}
             />
           </div>
 
@@ -385,7 +302,7 @@ const GeneralLedger = (onBack: GeneralLedgerProps) => {
       {filteredEntries.length > 0 && (
         <div className="ledger-footer">
           <div className="results-count">
-            Showing {filteredEntries.length} of {entries.length} transactions
+            Showing {filteredEntries.length} transactions
           </div>
         </div>
       )}
