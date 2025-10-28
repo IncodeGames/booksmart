@@ -5,6 +5,29 @@
     min-height: 100vh;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+}
+
+/* When rendered inside invoices-page, don't add extra margin */
+.invoices-page .create-invoice-page {
+    margin-left: 0;
+}
+
+/* When rendered standalone, account for sidebar */
+body > .create-invoice-page {
+    margin-left: 280px;
+    transition: margin-left 0.3s ease;
+}
+
+/* Responsive - no margin on mobile */
+@media (max-width: 768px) {
+    .create-invoice-page,
+    body > .create-invoice-page {
+        margin-left: 0;
+    }
 }
 
 /* Header Styles */

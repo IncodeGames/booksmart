@@ -121,21 +121,15 @@ const CreateInvoice = ({ user, onSignOut }: CreateInvoiceProps) => {
 
     const generateInvoiceNumber = async () => {
         try {
-            // Get the latest invoice number
+            // Get the count of existing invoices to generate a sequential number
             const { data, error } = await supabase
                 .from('invoices')
-                .select('invoice_number')
-                .order('created_at', { ascending: false })
-                .limit(1);
+                .select('id')
+                .order('created_at', { ascending: false });
 
             if (error) throw error;
 
-            let nextNumber = 1;
-            if (data && data.length > 0 && data[0].invoice_number) {
-                const lastNumber = parseInt(data[0].invoice_number.replace(/\D/g, '')) || 0;
-                nextNumber = lastNumber + 1;
-            }
-
+            const nextNumber = (data?.length || 0) + 1;
             const invoiceNumber = `INV-${nextNumber.toString().padStart(4, '0')}`;
             setInvoiceData(prev => ({ ...prev, invoice_number: invoiceNumber }));
         } catch (error) {
@@ -250,17 +244,10 @@ const CreateInvoice = ({ user, onSignOut }: CreateInvoiceProps) => {
                 .from('invoices')
                 .insert([{
                     client_id: invoiceData.client_id,
-                    invoice_number: invoiceData.invoice_number,
                     amount: invoiceData.total,
                     issued_date: invoiceData.issue_date,
                     due_date: invoiceData.due_date,
-                    invoice_status: 'draft',
-                    notes: invoiceData.notes,
-                    terms: invoiceData.terms,
-                    line_items: invoiceData.line_items,
-                    subtotal: invoiceData.subtotal,
-                    tax_rate: invoiceData.tax_rate,
-                    tax_amount: invoiceData.tax_amount
+                    invoice_status: 'draft'
                 }]);
 
             if (error) throw error;
@@ -298,17 +285,10 @@ const CreateInvoice = ({ user, onSignOut }: CreateInvoiceProps) => {
                 .from('invoices')
                 .insert([{
                     client_id: invoiceData.client_id,
-                    invoice_number: invoiceData.invoice_number,
                     amount: invoiceData.total,
                     issued_date: invoiceData.issue_date,
                     due_date: invoiceData.due_date,
-                    invoice_status: 'sent',
-                    notes: invoiceData.notes,
-                    terms: invoiceData.terms,
-                    line_items: invoiceData.line_items,
-                    subtotal: invoiceData.subtotal,
-                    tax_rate: invoiceData.tax_rate,
-                    tax_amount: invoiceData.tax_amount
+                    invoice_status: 'sent'
                 }])
                 .select('id')
                 .single();
