@@ -96,9 +96,17 @@ const Sidebar = () => {
                     <span className="nav-icon">💰</span>
                     Expenses
                 </a>
-                <a href="#" className="nav-item">
-                    <span className="nav-icon">📈</span>
-                    Analytics
+                <a
+                    href="#"
+                    className={`nav-item ${isActive('reports') ? 'active' : ''}`}
+                    onClick={(e) => {
+                        e.preventDefault();
+                        navigate(Destinations.REPORTS);
+                        setSidebarOpen(false);
+                    }}
+                >
+                    <span className="nav-icon">📊</span>
+                    Reports
                 </a>
                 <a
                     href="#"

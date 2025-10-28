@@ -10,6 +10,7 @@ import ProfileSetup from './components/ProfileSetup.tsx';
 import Dashboard from './components/Dashboard.tsx';
 import Clients from './components/Clients.tsx';
 import Invoices from './components/Invoices.tsx';
+import Reports from './components/Reports.tsx';
 import Settings from './components/Settings.tsx';
 import TimeTracking from './components/TimeTracking.tsx';
 import Expenses from './components/Expenses.tsx';
@@ -108,6 +109,13 @@ function App() {
             </RequireProfile>
           </RequireAuth>
         } />
+        <Route path={Destinations.REPORTS} element={
+          <RequireAuth>
+            <RequireProfile>
+              <Reports user={user} onSignOut={signOut} />
+            </RequireProfile>
+          </RequireAuth>
+        } />
         <Route path={Destinations.SETTINGS} element={
           <RequireAuth>
             <RequireProfile>
@@ -124,7 +132,7 @@ function App() {
         } />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-      
+
       {/* Global Timer Modal - persists across all authenticated pages */}
       {user && <GlobalTimerModal />}
     </div>

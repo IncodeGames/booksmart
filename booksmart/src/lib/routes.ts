@@ -7,6 +7,7 @@ export const Destinations = {
     INVOICES: "/invoices",
     TIME_TRACKING: "/time-tracking",
     EXPENSES: "/expenses",
+    REPORTS: "/reports",
     SETTINGS: "/settings",
     BILLING: "/billing",
 };
