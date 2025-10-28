@@ -1,0 +1,115 @@
+.trial-banner {
+    padding: 16px;
+    border-radius: 12px;
+    margin-bottom: 24px;
+    border: 1px solid;
+    animation: fadeIn 0.3s ease-out;
+}
+
+.trial-banner.active {
+    background: linear-gradient(135deg, #e8f5e8 0%, #f0f9ff 100%);
+    border-color: #10b981;
+    color: #065f46;
+}
+
+.trial-banner.warning {
+    background: linear-gradient(135deg, #fef3c7 0%, #fef7cd 100%);
+    border-color: #f59e0b;
+    color: #92400e;
+}
+
+.trial-banner.expired {
+    background: linear-gradient(135deg, #fee2e2 0%, #fef2f2 100%);
+    border-color: #ef4444;
+    color: #991b1b;
+}
+
+.trial-banner-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.trial-banner-text {
+    flex: 1;
+}
+
+.trial-banner-title {
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0 0 4px 0;
+    line-height: 1.2;
+}
+
+.trial-banner-message {
+    font-size: 14px;
+    margin: 0;
+    opacity: 0.8;
+    line-height: 1.4;
+}
+
+.trial-banner-button {
+    padding: 12px 20px;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.trial-banner.active .trial-banner-button {
+    background-color: #10b981;
+    color: white;
+}
+
+.trial-banner.active .trial-banner-button:hover {
+    background-color: #059669;
+    transform: translateY(-1px);
+}
+
+.trial-banner.warning .trial-banner-button {
+    background-color: #f59e0b;
+    color: white;
+}
+
+.trial-banner.warning .trial-banner-button:hover {
+    background-color: #d97706;
+    transform: translateY(-1px);
+}
+
+.trial-banner.expired .trial-banner-button {
+    background-color: #ef4444;
+    color: white;
+}
+
+.trial-banner.expired .trial-banner-button:hover {
+    background-color: #dc2626;
+    transform: translateY(-1px);
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@media (max-width: 768px) {
+    .trial-banner-content {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+    
+    .trial-banner-button {
+        align-self: stretch;
+        text-align: center;
+    }
+}

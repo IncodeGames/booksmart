@@ -1,4 +1,3 @@
-
 import React from 'react';
 
 interface Plan {
@@ -8,19 +7,53 @@ interface Plan {
     price: number;
     interval: string;
     features: string[];
-    popular?: boolean;
+    isPopular?: boolean;
+    priceId?: string;
 }
 
 interface PlanCardProps {
     plan: Plan;
     isCurrentPlan: boolean;
     onSelect: (planId: string) => void;
+    loading?: boolean;
+    trialAvailable?: boolean;
 }
 
-const PlanCard = ({ plan, isCurrentPlan, onSelect }: PlanCardProps) => {
+/**
+ * Enhanced PlanCard component with support for trials and improved UX
+ * Displays pricing plans with features, trial availability, and subscription actions
+ */
+const PlanCard = ({ plan, isCurrentPlan, onSelect, loading = false, trialAvailable = false }: PlanCardProps) => {
+    const getButtonText = () => {
+        if (isCurrentPlan) {
+            return 'Current Plan';
+        }
+        
+        if (plan.id === 'free') {
+            return 'Downgrade to Free';
+        }
+        
+        if (trialAvailable) {
+            return `Start Free Trial`;
+        }
+        
+        return `Upgrade to ${plan.name}`;
+    };
+
+    const getButtonClass = () => {
+        if (isCurrentPlan) return 'plan-button current';
+        if (plan.id === 'free') return 'plan-button downgrade';
+        if (trialAvailable) return 'plan-button trial';
+        return 'plan-button upgrade';
+    };
+
     return (
-        <div className={`plan-card ${isCurrentPlan ? 'current' : ''} ${plan.popular ? 'popular' : ''}`}>
-            {plan.popular && <div className="popular-badge">Most Popular</div>}
+        <div className={`plan-card ${isCurrentPlan ? 'current' : ''} ${plan.isPopular ? 'popular' : ''}`}>
+            {plan.isPopular && <div className="popular-badge">Most Popular</div>}
+            
+            {trialAvailable && plan.id !== 'free' && (
+                <div className="trial-badge">30-Day Free Trial</div>
+            )}
 
             <div className="plan-header">
                 <h3 className="plan-name">{plan.name}</h3>
@@ -28,8 +61,15 @@ const PlanCard = ({ plan, isCurrentPlan, onSelect }: PlanCardProps) => {
             </div>
 
             <div className="plan-pricing">
-                <span className="price-amount">${plan.price.toFixed(2)}</span>
+                <span className="price-amount">
+                    ${plan.price.toFixed(2)}
+                </span>
                 <span className="price-interval">/{plan.interval}</span>
+                {plan.interval === 'year' && plan.price > 0 && (
+                    <div className="yearly-note">
+                        ${(plan.price / 12).toFixed(2)}/month billed annually
+                    </div>
+                )}
             </div>
 
             <ul className="plan-features">
@@ -44,11 +84,17 @@ const PlanCard = ({ plan, isCurrentPlan, onSelect }: PlanCardProps) => {
             </ul>
 
             <button
-                className={`plan-button ${isCurrentPlan ? 'current' : 'upgrade'}`}
+                className={getButtonClass()}
                 onClick={() => onSelect(plan.id)}
-                disabled={isCurrentPlan}
+                disabled={isCurrentPlan || loading}
             >
-                {isCurrentPlan ? 'Current Plan' : `Upgrade to ${plan.name}`}
+                {loading ? (
+                    <div className="button-spinner">
+                        <div className="loading-spinner small"></div>
+                    </div>
+                ) : (
+                    getButtonText()
+                )}
             </button>
         </div>
     );
