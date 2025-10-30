@@ -49,6 +49,7 @@ const Invoices = ({ user, onSignOut }: InvoicesProps) => {
     const [clients, setClients] = useState<Client[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [showCreateInvoice, setShowCreateInvoice] = useState<boolean>(false);
+    const [invoiceToEdit, setInvoiceToEdit] = useState<Invoice | null>(null);
     const [contextMenu, setContextMenu] = useState<{ x: number; y: number; invoiceId: number } | null>(null);
     const [searchTerm, setSearchTerm] = useState<string>('');
     const [statusFilter, setStatusFilter] = useState<'All' | InvoiceStatus.Paid | InvoiceStatus.Unpaid>('All');
@@ -212,6 +213,16 @@ const Invoices = ({ user, onSignOut }: InvoicesProps) => {
         setClients(clientsData || []);
     };
 
+    const handleEditInvoice = (invoiceId: number) => {
+        const invoice = invoices.find(inv => inv.id === invoiceId);
+        if (invoice && invoice.invoice_status !== 'sent' && invoice.invoice_status !== 'paid') {
+            setInvoiceToEdit(invoice);
+            setShowCreateInvoice(true);
+        } else {
+            setError('Can only edit draft invoices');
+        }
+    };
+
     const handleDeleteInvoice = async (invoiceId: number) => {
         const invoice = invoices.find(inv => inv.id === invoiceId);
         if (!invoice) return;
@@ -349,6 +360,12 @@ const Invoices = ({ user, onSignOut }: InvoicesProps) => {
                 <CreateInvoice
                     user={user}
                     onSignOut={onSignOut}
+                    onBack={() => {
+                        setShowCreateInvoice(false);
+                        setInvoiceToEdit(null);
+                        fetchInvoices(); // Refresh the list
+                    }}
+                    invoiceToEdit={invoiceToEdit}
                 />
             ) : (
                 <div className="page-content">
@@ -362,6 +379,7 @@ const Invoices = ({ user, onSignOut }: InvoicesProps) => {
                             <button
                                 className="create-invoice-btn"
                                 onClick={() => {
+                                    setInvoiceToEdit(null); // Clear any previous edit
                                     setShowCreateInvoice(true);
                                     setError('');
                                 }}
@@ -550,6 +568,7 @@ const Invoices = ({ user, onSignOut }: InvoicesProps) => {
                                                         <div className="table-cell">
                                                             <span className={`status-badge ${invoice.invoice_status.toLowerCase()}`}>
                                                                 {invoice.invoice_status}
+                                                                {invoice.invoice_status === 'draft' && ' ✏️'}
                                                             </span>
                                                         </div>
                                                         <div className="table-cell">
@@ -583,6 +602,15 @@ const Invoices = ({ user, onSignOut }: InvoicesProps) => {
                             }}
                             role="menu"
                         >
+                            <button
+                                role="menuitem"
+                                onClick={() => {
+                                    handleEditInvoice(contextMenu.invoiceId);
+                                    setContextMenu(null);
+                                }}
+                            >
+                                Edit Invoice
+                            </button>
                             <button
                                 role="menuitem"
                                 onClick={() => {

@@ -340,6 +340,13 @@ body > .create-invoice-page {
     min-height: 80px;
 }
 
+.form-hint {
+    font-size: 0.8rem;
+    color: #718096;
+    margin-top: 0.25rem;
+    font-style: italic;
+}
+
 .disabled-input {
     background: #f7fafc !important;
     color: #a0aec0 !important;

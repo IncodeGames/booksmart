@@ -12,6 +12,8 @@ interface User {
 interface CreateInvoiceProps {
     user: User;
     onSignOut: () => void;
+    onBack?: () => void;
+    invoiceToEdit?: any; // For editing existing draft invoices
 }
 
 interface Client {
@@ -45,7 +47,7 @@ interface InvoiceData {
     status: 'draft' | 'sent' | 'paid';
 }
 
-const CreateInvoice = ({ user, onSignOut }: CreateInvoiceProps) => {
+const CreateInvoice = ({ user, onSignOut, onBack, invoiceToEdit }: CreateInvoiceProps) => {
     const navigate = useNavigate();
     const [clients, setClients] = useState<Client[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
@@ -78,6 +80,7 @@ const CreateInvoice = ({ user, onSignOut }: CreateInvoiceProps) => {
     });
 
     const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+    const [recipientEmail, setRecipientEmail] = useState<string>(''); // Email to send invoice to
     const [showPreview, setShowPreview] = useState<boolean>(false);
     const [showSendModal, setShowSendModal] = useState<boolean>(false);
     const [emailData, setEmailData] = useState({
@@ -87,7 +90,11 @@ const CreateInvoice = ({ user, onSignOut }: CreateInvoiceProps) => {
 
     useEffect(() => {
         fetchClients();
-        generateInvoiceNumber();
+        if (invoiceToEdit) {
+            loadInvoiceForEdit();
+        } else {
+            generateInvoiceNumber();
+        }
     }, []);
 
     useEffect(() => {
@@ -98,6 +105,10 @@ const CreateInvoice = ({ user, onSignOut }: CreateInvoiceProps) => {
         if (invoiceData.client_id) {
             const client = clients.find(c => c.id === invoiceData.client_id);
             setSelectedClient(client || null);
+            // Set recipient email to client's email by default
+            if (client?.email && !recipientEmail) {
+                setRecipientEmail(client.email);
+            }
         }
     }, [invoiceData.client_id, clients]);
 
@@ -116,6 +127,44 @@ const CreateInvoice = ({ user, onSignOut }: CreateInvoiceProps) => {
             setError('Failed to load clients. Please try again.');
         } finally {
             setLoading(false);
+        }
+    };
+
+    const loadInvoiceForEdit = async () => {
+        if (!invoiceToEdit) return;
+        
+        try {
+            // Set the invoice data from the passed invoice
+            setInvoiceData({
+                client_id: invoiceToEdit.client_id,
+                invoice_number: `INV-${invoiceToEdit.id.toString().padStart(4, '0')}`,
+                issue_date: invoiceToEdit.issued_date,
+                due_date: invoiceToEdit.due_date,
+                notes: '',
+                terms: 'Payment is due within 30 days of invoice date. Late payments may be subject to fees.',
+                line_items: [
+                    {
+                        id: '1',
+                        description: 'Services',
+                        quantity: 1,
+                        rate: invoiceToEdit.amount,
+                        amount: invoiceToEdit.amount
+                    }
+                ],
+                subtotal: invoiceToEdit.amount,
+                tax_rate: 0,
+                tax_amount: 0,
+                total: invoiceToEdit.amount,
+                status: invoiceToEdit.invoice_status
+            });
+            
+            // Set recipient email if client exists
+            if (invoiceToEdit.client?.email) {
+                setRecipientEmail(invoiceToEdit.client.email);
+            }
+        } catch (error) {
+            console.error('Error loading invoice for edit:', error);
+            setError('Failed to load invoice data');
         }
     };
 
@@ -240,21 +289,43 @@ const CreateInvoice = ({ user, onSignOut }: CreateInvoiceProps) => {
             setSaving(true);
             setError('');
 
-            const { error } = await supabase
-                .from('invoices')
-                .insert([{
-                    client_id: invoiceData.client_id,
-                    amount: invoiceData.total,
-                    issued_date: invoiceData.issue_date,
-                    due_date: invoiceData.due_date,
-                    invoice_status: 'draft'
-                }]);
+            if (invoiceToEdit) {
+                // Update existing invoice
+                const { error } = await supabase
+                    .from('invoices')
+                    .update({
+                        client_id: invoiceData.client_id,
+                        amount: invoiceData.total,
+                        issued_date: invoiceData.issue_date,
+                        due_date: invoiceData.due_date,
+                        invoice_status: 'draft'
+                    })
+                    .eq('id', invoiceToEdit.id);
 
-            if (error) throw error;
+                if (error) throw error;
+                setSuccess('Invoice updated successfully!');
+            } else {
+                // Create new invoice
+                const { error } = await supabase
+                    .from('invoices')
+                    .insert([{
+                        client_id: invoiceData.client_id,
+                        amount: invoiceData.total,
+                        issued_date: invoiceData.issue_date,
+                        due_date: invoiceData.due_date,
+                        invoice_status: 'draft'
+                    }]);
 
-            setSuccess('Invoice saved as draft successfully!');
+                if (error) throw error;
+                setSuccess('Invoice saved as draft successfully!');
+            }
+
             setTimeout(() => {
-                navigate(Destinations.INVOICES);
+                if (onBack) {
+                    onBack();
+                } else {
+                    navigate(Destinations.INVOICES);
+                }
             }, 1500);
         } catch (error: any) {
             console.error('Error saving invoice:', error);
@@ -265,8 +336,8 @@ const CreateInvoice = ({ user, onSignOut }: CreateInvoiceProps) => {
     };
 
     const sendInvoice = async () => {
-        if (!selectedClient?.email) {
-            setError('Client email is required to send invoice');
+        if (!recipientEmail) {
+            setError('Recipient email is required to send invoice');
             return;
         }
 
@@ -280,26 +351,47 @@ const CreateInvoice = ({ user, onSignOut }: CreateInvoiceProps) => {
             setSending(true);
             setError('');
 
-            // First save the invoice
-            const { data, error: saveError } = await supabase
-                .from('invoices')
-                .insert([{
-                    client_id: invoiceData.client_id,
-                    amount: invoiceData.total,
-                    issued_date: invoiceData.issue_date,
-                    due_date: invoiceData.due_date,
-                    invoice_status: 'sent'
-                }])
-                .select('id')
-                .single();
+            // First save or update the invoice
+            let invoiceId;
+            
+            if (invoiceToEdit) {
+                // Update existing invoice to sent status
+                const { error: updateError } = await supabase
+                    .from('invoices')
+                    .update({
+                        client_id: invoiceData.client_id,
+                        amount: invoiceData.total,
+                        issued_date: invoiceData.issue_date,
+                        due_date: invoiceData.due_date,
+                        invoice_status: 'sent'
+                    })
+                    .eq('id', invoiceToEdit.id);
 
-            if (saveError) throw saveError;
+                if (updateError) throw updateError;
+                invoiceId = invoiceToEdit.id;
+            } else {
+                // Create new invoice
+                const { data, error: saveError } = await supabase
+                    .from('invoices')
+                    .insert([{
+                        client_id: invoiceData.client_id,
+                        amount: invoiceData.total,
+                        issued_date: invoiceData.issue_date,
+                        due_date: invoiceData.due_date,
+                        invoice_status: 'sent'
+                    }])
+                    .select('id')
+                    .single();
+
+                if (saveError) throw saveError;
+                invoiceId = data.id;
+            }
 
             // Then send the email
             const success = await EmailService.sendInvoice({
-                invoiceId: data.id,
-                clientName: selectedClient.name,
-                clientEmail: selectedClient.email,
+                invoiceId: invoiceId,
+                clientName: selectedClient?.name || 'Client',
+                clientEmail: recipientEmail, // Use the recipient email field
                 amount: invoiceData.total,
                 dueDate: invoiceData.due_date,
                 issuedDate: invoiceData.issue_date,
@@ -311,7 +403,11 @@ const CreateInvoice = ({ user, onSignOut }: CreateInvoiceProps) => {
                 setSuccess('Invoice sent successfully!');
                 setShowSendModal(false);
                 setTimeout(() => {
-                    navigate(Destinations.INVOICES);
+                    if (onBack) {
+                        onBack();
+                    } else {
+                        navigate(Destinations.INVOICES);
+                    }
                 }, 1500);
             }
         } catch (error: any) {
@@ -368,12 +464,18 @@ const CreateInvoice = ({ user, onSignOut }: CreateInvoiceProps) => {
                 <div className="header-left">
                     <button
                         className="back-button"
-                        onClick={() => navigate('/invoices')}
+                        onClick={() => {
+                            if (onBack) {
+                                onBack();
+                            } else {
+                                navigate('/invoices');
+                            }
+                        }}
                         aria-label="Back to Invoices"
                     >
                         ← Back to Invoices
                     </button>
-                    <h1>Create Invoice</h1>
+                    <h1>{invoiceToEdit ? 'Edit Invoice' : 'Create Invoice'}</h1>
                 </div>
 
                 <div className="header-right">
@@ -455,6 +557,23 @@ const CreateInvoice = ({ user, onSignOut }: CreateInvoiceProps) => {
                                                 </option>
                                             ))}
                                         </select>
+                                    </div>
+
+                                    <div className="form-group">
+                                        <label htmlFor="recipient-email">Send Invoice To (Email) *</label>
+                                        <input
+                                            type="email"
+                                            id="recipient-email"
+                                            value={recipientEmail}
+                                            onChange={(e) => setRecipientEmail(e.target.value)}
+                                            placeholder="recipient@example.com"
+                                            required
+                                        />
+                                        {selectedClient?.email && recipientEmail !== selectedClient.email && (
+                                            <small className="form-hint">
+                                                Different from client's default email: {selectedClient.email}
+                                            </small>
+                                        )}
                                     </div>
 
                                     <div className="form-group">
