@@ -5,6 +5,8 @@ import { supabase } from '../lib/supabase';
 import { EmailService } from '../services/emailService';
 import CreateInvoice from './CreateInvoice';
 import Sidebar from './Sidebar';
+import * as siteUtils from '../utils/siteUtils';
+import { useNavigationStore } from '../stores/navigationStore';
 import './styles/base.css'
 import './styles/Invoices.css'
 
@@ -25,6 +27,7 @@ interface Client {
 }
 
 enum InvoiceStatus {
+    Draft = 'draft',
     Unpaid = 'unpaid',
     Paid = 'paid',
 }
@@ -215,7 +218,7 @@ const Invoices = ({ user, onSignOut }: InvoicesProps) => {
 
     const handleEditInvoice = (invoiceId: number) => {
         const invoice = invoices.find(inv => inv.id === invoiceId);
-        if (invoice && invoice.invoice_status !== 'sent' && invoice.invoice_status !== 'paid') {
+        if (invoice && invoice.invoice_status !== 'sent' && invoice.invoice_status !== InvoiceStatus.Paid) {
             setInvoiceToEdit(invoice);
             setShowCreateInvoice(true);
         } else {
@@ -353,6 +356,9 @@ const Invoices = ({ user, onSignOut }: InvoicesProps) => {
         fetchData(); // Refresh the invoice list
     };
 
+    const windowSize = siteUtils.useWindowSize();
+    const { sidebarOpen, setSidebarOpen } = useNavigationStore();
+
     return (
         <div className="invoices-page">
             <Sidebar />
@@ -368,7 +374,7 @@ const Invoices = ({ user, onSignOut }: InvoicesProps) => {
                     invoiceToEdit={invoiceToEdit}
                 />
             ) : (
-                <div className="page-content">
+                <main className="invoices-main">
                     {/* Header */}
                     <header className="invoices-header">
                         <div className="header-left">
@@ -388,6 +394,16 @@ const Invoices = ({ user, onSignOut }: InvoicesProps) => {
                                 + New Invoice
                             </button>
 
+                            {siteUtils.isMobile(windowSize) && (
+                                <button
+                                    className="menu-toggle"
+                                    onClick={() => setSidebarOpen(true)}
+                                    aria-label="Open sidebar menu"
+                                >
+                                    ☰
+                                </button>
+                            )}
+
                             <div className="user-menu">
                                 <div className="user-avatar">
                                     {user.email?.charAt(0).toUpperCase()}
@@ -402,8 +418,8 @@ const Invoices = ({ user, onSignOut }: InvoicesProps) => {
                         </div>
                     </header>
 
-                    {/* Main Content */}
-                    <main className="invoices-main">
+                    {/* Content */}
+                    <div className="invoices-content">
                         {error && (
                             <div className="error-message" role="alert">
                                 <span className="error-icon">⚠️</span>
@@ -568,7 +584,7 @@ const Invoices = ({ user, onSignOut }: InvoicesProps) => {
                                                         <div className="table-cell">
                                                             <span className={`status-badge ${invoice.invoice_status.toLowerCase()}`}>
                                                                 {invoice.invoice_status}
-                                                                {invoice.invoice_status === 'draft' && ' ✏️'}
+                                                                {invoice.invoice_status === InvoiceStatus.Draft && ' ✏️'}
                                                             </span>
                                                         </div>
                                                         <div className="table-cell">
@@ -588,7 +604,7 @@ const Invoices = ({ user, onSignOut }: InvoicesProps) => {
                                 </div>
                             </div>
                         )}
-                    </main>
+                    </div>
 
                     {/* Context Menu */}
                     {contextMenu && (
@@ -629,87 +645,95 @@ const Invoices = ({ user, onSignOut }: InvoicesProps) => {
                             </button>
                         </div>
                     )}
+                </main>
+            )}
 
-                    {/* Send Invoice Modal */}
-                    {showEmailModal && emailingInvoice && (
-                        <div className="modal-overlay" onClick={() => setShowEmailModal(false)}>
-                            <div className="modal-content" onClick={(e) => e.stopPropagation()} role="dialog" aria-labelledby="email-modal-title">
-                                <div className="modal-header">
-                                    <h2 id="email-modal-title">Send Invoice #{emailingInvoice.id}</h2>
-                                    <button
-                                        className="modal-close"
-                                        onClick={() => setShowEmailModal(false)}
-                                        aria-label="Close modal"
-                                    >
-                                        ×
-                                    </button>
-                                </div>
-
-                                <form onSubmit={handleSendInvoice} className="email-form">
-                                    <div className="form-group">
-                                        <label htmlFor="email-to">To:</label>
-                                        <input
-                                            type="email"
-                                            id="email-to"
-                                            value={emailingInvoice.client?.email || ''}
-                                            disabled
-                                            className="disabled-input"
-                                        />
-                                    </div>
-
-                                    <div className="form-group">
-                                        <label htmlFor="email-subject">Subject:</label>
-                                        <input
-                                            type="text"
-                                            id="email-subject"
-                                            value={emailData.subject}
-                                            onChange={(e) => setEmailData(prev => ({ ...prev, subject: e.target.value }))}
-                                            required
-                                        />
-                                    </div>
-
-                                    <div className="form-group">
-                                        <label htmlFor="email-message">Message:</label>
-                                        <textarea
-                                            id="email-message"
-                                            rows={6}
-                                            value={emailData.message}
-                                            onChange={(e) => setEmailData(prev => ({ ...prev, message: e.target.value }))}
-                                            placeholder="Add a personal message (optional)"
-                                        />
-                                    </div>
-
-                                    <div className="invoice-preview">
-                                        <h4>Invoice Details:</h4>
-                                        <div className="preview-details">
-                                            <p><strong>Client:</strong> {emailingInvoice.client?.name}</p>
-                                            <p><strong>Amount:</strong> {formatCurrency(emailingInvoice.amount)}</p>
-                                            <p><strong>Due Date:</strong> {formatDate(emailingInvoice.due_date)}</p>
-                                            <p><strong>Status:</strong> {emailingInvoice.invoice_status}</p>
-                                        </div>
-                                    </div>
-
-                                    <div className="form-actions">
-                                        <button
-                                            type="button"
-                                            className="cancel-btn"
-                                            onClick={() => setShowEmailModal(false)}
-                                        >
-                                            Cancel
-                                        </button>
-                                        <button
-                                            type="submit"
-                                            className="submit-btn send-btn"
-                                            disabled={sending}
-                                        >
-                                            {sending ? 'Sending...' : 'Send Invoice'}
-                                        </button>
-                                    </div>
-                                </form>
-                            </div>
+            {/* Send Invoice Modal */}
+            {showEmailModal && emailingInvoice && (
+                <div className="modal-overlay" onClick={() => setShowEmailModal(false)}>
+                    <div className="modal-content" onClick={(e) => e.stopPropagation()} role="dialog" aria-labelledby="email-modal-title">
+                        <div className="modal-header">
+                            <h2 id="email-modal-title">Send Invoice #{emailingInvoice.id}</h2>
+                            <button
+                                className="modal-close"
+                                onClick={() => setShowEmailModal(false)}
+                                aria-label="Close modal"
+                            >
+                                ×
+                            </button>
                         </div>
-                    )}
+
+                        <form onSubmit={handleSendInvoice} className="email-form">
+                            <div className="form-group">
+                                <label htmlFor="email-to">To:</label>
+                                <input
+                                    type="email"
+                                    id="email-to"
+                                    value={emailingInvoice.client?.email || ''}
+                                    disabled
+                                    className="disabled-input"
+                                />
+                            </div>
+
+                            <div className="form-group">
+                                <label htmlFor="email-subject">Subject:</label>
+                                <input
+                                    type="text"
+                                    id="email-subject"
+                                    value={emailData.subject}
+                                    onChange={(e) => setEmailData(prev => ({ ...prev, subject: e.target.value }))}
+                                    required
+                                />
+                            </div>
+
+                            <div className="form-group">
+                                <label htmlFor="email-message">Message:</label>
+                                <textarea
+                                    id="email-message"
+                                    rows={6}
+                                    value={emailData.message}
+                                    onChange={(e) => setEmailData(prev => ({ ...prev, message: e.target.value }))}
+                                    placeholder="Add a personal message (optional)"
+                                />
+                            </div>
+
+                            <div className="invoice-preview">
+                                <h4>Invoice Details:</h4>
+                                <div className="preview-details">
+                                    <p><strong>Client:</strong> {emailingInvoice.client?.name}</p>
+                                    <p><strong>Amount:</strong> {formatCurrency(emailingInvoice.amount)}</p>
+                                    <p><strong>Due Date:</strong> {formatDate(emailingInvoice.due_date)}</p>
+                                    <p><strong>Status:</strong> {emailingInvoice.invoice_status}</p>
+                                </div>
+                            </div>
+
+                            <div className="form-actions">
+                                <button
+                                    type="button"
+                                    className="cancel-btn"
+                                    onClick={() => setShowEmailModal(false)}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="submit-btn send-btn"
+                                    disabled={sending}
+                                >
+                                    {sending ? 'Sending...' : 'Send Invoice'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
+            )}
+
+            {/* Mobile Sidebar Overlay */}
+            {siteUtils.isMobile(windowSize) && sidebarOpen && (
+                <div
+                    className="sidebar-overlay"
+                    onClick={() => setSidebarOpen(false)}
+                ></div>
             )}
         </div>
     );
