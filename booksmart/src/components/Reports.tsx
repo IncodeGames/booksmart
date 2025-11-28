@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router';
 import Sidebar from './Sidebar';
 import GeneralLedger from './reports/GeneralLedger';
+import ExpenseReports from './reports/ExpenseReports';
 import './styles/Reports.css';
 
 type ReportType =
@@ -52,7 +53,7 @@ const Reports = ({ user, onSignOut }: ReportsProps) => {
       title: 'Expense Reports',
       description: 'Detailed breakdown of business expenses by category',
       icon: '💸',
-      available: false,
+      available: true,
     },
     {
       id: 'invoice-details',
@@ -92,7 +93,7 @@ const Reports = ({ user, onSignOut }: ReportsProps) => {
   ];
 
   const handleReportSelect = (reportId: ReportType) => {
-    if (reportId === 'general-ledger') {
+    if (reportId === 'general-ledger' || reportId === 'expense-reports') {
       setActiveReport(reportId);
     } else {
       // Show coming soon message for other reports
@@ -109,6 +110,8 @@ const Reports = ({ user, onSignOut }: ReportsProps) => {
     switch (activeReport) {
       case 'general-ledger':
         return <GeneralLedger onBack={handleBackToOverview} />;
+      case 'expense-reports':
+        return <ExpenseReports onBack={handleBackToOverview} />;
       case 'overview':
       default:
         return (
