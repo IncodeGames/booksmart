@@ -106,69 +106,82 @@ const ExpensesPage = () => {
     };
 
     const totalExpenses = filteredExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+    const averageExpense = filteredExpenses.length > 0 ? totalExpenses / filteredExpenses.length : 0;
 
     return (
         <div className="expenses-page">
             <Sidebar />
             <div className="page-content">
-                <div className="page-header">
-                    <h1>
-                        <Receipt className="header-icon" />
-                        Expenses
-                    </h1>
-                    <button
-                        className="add-expense-btn btn-primary"
-                        onClick={() => setIsModalOpen(true)}
-                    >
-                        <Plus size={20} />
-                        Add Expense
-                    </button>
-                </div>
-
-                {/* Summary Card */}
-                <div className="expenses-summary card">
-                    <div className="summary-item">
-                        <span className="summary-label">Total Expenses</span>
-                        <span className="summary-value expense-amount">
-                            ${totalExpenses.toFixed(2)}
-                        </span>
+                {/* Header */}
+                <header className="expenses-header">
+                    <div className="header-left">
+                        <h1>Expenses</h1>
                     </div>
-                    <div className="summary-item">
-                        <span className="summary-label">Total Records</span>
-                        <span className="summary-value">{filteredExpenses.length}</span>
+                    
+                    <div className="header-right">
+                        <button
+                            className="create-expense-btn"
+                            onClick={() => setIsModalOpen(true)}
+                            aria-label="Add new expense"
+                        >
+                            <Plus size={20} />
+                            Add Expense
+                        </button>
                     </div>
-                </div>
+                </header>
 
-                {/* Search Bar */}
-                <div className="search-section">
-                    <div className="search-bar">
-                        <Search className="search-icon" size={20} />
-                        <input
-                            type="text"
-                            className="search-input"
-                            placeholder="Search by category, vendor, description, or amount..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                        />
-                        {searchTerm && (
-                            <button
-                                className="clear-search-btn"
-                                onClick={() => setSearchTerm('')}
-                                aria-label="Clear search"
-                            >
-                                <X size={18} />
-                            </button>
-                        )}
+                {/* Main Content */}
+                <div className="expenses-main">
+                    {/* Summary Cards */}
+                    <div className="expenses-summary">
+                        <div className="summary-card">
+                            <h3>Total Expenses</h3>
+                            <p className="summary-value expense-amount">
+                                ${totalExpenses.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </p>
+                        </div>
+                        <div className="summary-card">
+                            <h3>Total Records</h3>
+                            <p className="summary-value">{filteredExpenses.length}</p>
+                        </div>
+                        <div className="summary-card">
+                            <h3>Average Amount</h3>
+                            <p className="summary-value">
+                                ${averageExpense.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </p>
+                        </div>
                     </div>
-                </div>
 
-                {/* Expense List */}
-                <ExpenseList
-                    expenses={filteredExpenses}
-                    loading={loading}
-                    onDelete={handleDeleteExpense}
-                    onRefresh={fetchExpenses}
-                />
+                    {/* Filters */}
+                    <div className="expenses-filters">
+                        <div className="search-container">
+                            <input
+                                type="text"
+                                className="search-input"
+                                placeholder="Search by category, vendor, description, or amount..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                            />
+                            {searchTerm && (
+                                <button
+                                    className="clear-search-btn"
+                                    onClick={() => setSearchTerm('')}
+                                    aria-label="Clear search"
+                                >
+                                    <X size={18} />
+                                </button>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Expense List */}
+                    <ExpenseList
+                        expenses={filteredExpenses}
+                        loading={loading}
+                        onDelete={handleDeleteExpense}
+                        onRefresh={fetchExpenses}
+                    />
+                </div>
 
                 {/* Add Expense Modal */}
                 {isModalOpen && (
