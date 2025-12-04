@@ -8,7 +8,7 @@ import LandingPage from './components/LandingPage.tsx';
 import AuthPage from './components/AuthPage.tsx';
 import ProfileSetup from './components/ProfileSetup.tsx';
 import Dashboard from './components/Dashboard.tsx';
-import Clients from './components/Clients.tsx';
+import { ClientsPage } from './modules/clients';
 import Invoices from './components/Invoices.tsx';
 import Reports from './components/Reports.tsx';
 import Settings from './components/Settings.tsx';
@@ -84,7 +84,7 @@ function App() {
         <Route path={Destinations.CLIENTS} element={
           <RequireAuth>
             <RequireProfile>
-              <Clients user={user} onSignOut={signOut} />
+              <ClientsPage user={user} onSignOut={signOut} />
             </RequireProfile>
           </RequireAuth>
         } />
