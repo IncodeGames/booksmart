@@ -26,13 +26,8 @@ export enum SortDirection {
     Descending = 'desc',
 }
 
-export enum ClientDetailTab {
-    Invoices = 'invoices',
-    Expenses = 'expenses',
-}
-
 export interface Client {
-    id: number;
+    id: string;  // UUID in database
     name: string;
     email: string;
     phone?: string;
@@ -66,23 +61,13 @@ export interface ClientInvoiceSummary {
 }
 
 export interface ClientInvoice {
-    id: number;
+    id: number;  // serial integer in database
     amount: number;
     created_at: string;
     invoice_status: InvoiceStatus;
-    client_id: number;
+    client_id: string;  // UUID reference to client
     due_date: string;
     issued_date: string;
-}
-
-export interface ClientExpense {
-    id: number;
-    amount: number;
-    description?: string;
-    category: string;
-    date: string;
-    vendor?: string;
-    created_at: string;
 }
 
 export interface InvoiceChartData {

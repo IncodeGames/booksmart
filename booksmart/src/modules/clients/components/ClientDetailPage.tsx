@@ -1,44 +1,31 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import { supabase } from '../../../lib/supabase';
+import { Client, ClientInvoice } from '../types';
 import {
-    Client,
-    ClientInvoice,
-    ClientExpense,
-    ClientDetailTab,
-    InvoiceStatus,
-    InvoiceChartData,
-} from '../types';
+    calculateInvoiceChartData,
+    calculateTotalAmount,
+    formatCurrency,
+    formatDate,
+    getStatusClass,
+} from '../utils/clientDetailHelpers';
 
 interface ClientDetailPageProps {
     client: Client;
     onBack: () => void;
 }
 
-const CHART_COLORS = {
-    paid: '#22c55e',
-    unpaid: '#f59e0b',
-    draft: '#6b7280',
-    overdue: '#ef4444',
-};
-
 const ClientDetailPage: React.FC<ClientDetailPageProps> = ({ client, onBack }) => {
-    const [activeTab, setActiveTab] = useState<ClientDetailTab>(ClientDetailTab.Invoices);
     const [invoices, setInvoices] = useState<ClientInvoice[]>([]);
-    const [expenses, setExpenses] = useState<ClientExpense[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
 
-    useEffect(() => {
-        fetchClientData();
-    }, [client.id]);
-
-    const fetchClientData = async (): Promise<void> => {
+    const fetchClientInvoices = useCallback(async (): Promise<void> => {
         try {
             setLoading(true);
             setError(null);
 
-            // Fetch invoices
+            // Fetch invoices for this client
             const { data: invoicesData, error: invoicesError } = await supabase
                 .from('invoices')
                 .select('id, amount, created_at, invoice_status, client_id, due_date, issued_date')
@@ -47,95 +34,22 @@ const ClientDetailPage: React.FC<ClientDetailPageProps> = ({ client, onBack }) =
 
             if (invoicesError) throw invoicesError;
 
-            // Fetch expenses associated with this client
-            const { data: expensesData, error: expensesError } = await supabase
-                .from('expenses')
-                .select('id, amount, description, category, date, vendor, created_at')
-                .eq('client_id', client.id)
-                .order('date', { ascending: false });
-
-            if (expensesError) throw expensesError;
-
             setInvoices(invoicesData || []);
-            setExpenses(expensesData || []);
         } catch (err) {
-            const errorMessage = err instanceof Error ? err.message : 'Failed to load client data';
-            console.error('Error fetching client data:', err);
+            const errorMessage = err instanceof Error ? err.message : 'Failed to load client invoices';
+            console.error('Error fetching client invoices:', err);
             setError(errorMessage);
         } finally {
             setLoading(false);
         }
-    };
+    }, [client.id]);
 
-    const invoiceChartData: InvoiceChartData[] = useMemo(() => {
-        const paidAmount = invoices
-            .filter((inv) => inv.invoice_status === InvoiceStatus.Paid)
-            .reduce((sum, inv) => sum + inv.amount, 0);
-        const unpaidAmount = invoices
-            .filter((inv) => inv.invoice_status === InvoiceStatus.Unpaid)
-            .reduce((sum, inv) => sum + inv.amount, 0);
-        const draftAmount = invoices
-            .filter((inv) => inv.invoice_status === InvoiceStatus.Draft)
-            .reduce((sum, inv) => sum + inv.amount, 0);
-        const overdueAmount = invoices
-            .filter((inv) => inv.invoice_status === InvoiceStatus.Overdue)
-            .reduce((sum, inv) => sum + inv.amount, 0);
+    useEffect(() => {
+        fetchClientInvoices();
+    }, [fetchClientInvoices]);
 
-        const data: InvoiceChartData[] = [];
-
-        if (paidAmount > 0) {
-            data.push({ name: 'Paid', value: paidAmount, color: CHART_COLORS.paid });
-        }
-        if (unpaidAmount > 0) {
-            data.push({ name: 'Unpaid', value: unpaidAmount, color: CHART_COLORS.unpaid });
-        }
-        if (draftAmount > 0) {
-            data.push({ name: 'Draft', value: draftAmount, color: CHART_COLORS.draft });
-        }
-        if (overdueAmount > 0) {
-            data.push({ name: 'Overdue', value: overdueAmount, color: CHART_COLORS.overdue });
-        }
-
-        return data;
-    }, [invoices]);
-
-    const totalInvoiceAmount = useMemo(() => {
-        return invoices.reduce((sum, inv) => sum + inv.amount, 0);
-    }, [invoices]);
-
-    const totalExpenseAmount = useMemo(() => {
-        return expenses.reduce((sum, exp) => sum + exp.amount, 0);
-    }, [expenses]);
-
-    const formatCurrency = (amount: number): string => {
-        return new Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency: 'USD',
-        }).format(amount);
-    };
-
-    const formatDate = (dateString: string): string => {
-        return new Date(dateString).toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric',
-        });
-    };
-
-    const getStatusClass = (status: InvoiceStatus): string => {
-        switch (status) {
-            case InvoiceStatus.Paid:
-                return 'status-paid';
-            case InvoiceStatus.Unpaid:
-                return 'status-unpaid';
-            case InvoiceStatus.Draft:
-                return 'status-draft';
-            case InvoiceStatus.Overdue:
-                return 'status-overdue';
-            default:
-                return '';
-        }
-    };
+    const invoiceChartData = useMemo(() => calculateInvoiceChartData(invoices), [invoices]);
+    const totalInvoiceAmount = useMemo(() => calculateTotalAmount(invoices), [invoices]);
 
     const renderCustomLabel = ({
         cx,
@@ -282,132 +196,73 @@ const ClientDetailPage: React.FC<ClientDetailPageProps> = ({ client, onBack }) =
                     )}
                 </div>
 
-                {/* Tabs and Lists */}
+                {/* Invoices List */}
                 <div className="detail-main">
-                    <div className="tab-buttons">
-                        <button
-                            className={`tab-btn ${activeTab === ClientDetailTab.Invoices ? 'active' : ''}`}
-                            onClick={() => setActiveTab(ClientDetailTab.Invoices)}
-                        >
-                            Invoices ({invoices.length})
-                        </button>
-                        <button
-                            className={`tab-btn ${activeTab === ClientDetailTab.Expenses ? 'active' : ''}`}
-                            onClick={() => setActiveTab(ClientDetailTab.Expenses)}
-                        >
-                            Expenses ({expenses.length})
-                        </button>
+                    <div className="section-header">
+                        <h3>Invoice History</h3>
+                        <span className="invoice-count">{invoices.length} invoice{invoices.length !== 1 ? 's' : ''}</span>
                     </div>
 
                     {loading ? (
                         <div className="loading-container">
                             <div className="loading-spinner"></div>
-                            <p>Loading...</p>
+                            <p>Loading invoices...</p>
                         </div>
                     ) : (
                         <div className="tab-content">
-                            {activeTab === ClientDetailTab.Invoices && (
-                                <div className="invoices-list">
-                                    {invoices.length === 0 ? (
-                                        <div className="empty-list">
-                                            <p>No invoices found for this client.</p>
-                                        </div>
-                                    ) : (
-                                        <table className="data-table">
-                                            <thead>
-                                                <tr>
-                                                    <th>Invoice #</th>
-                                                    <th>Date</th>
-                                                    <th>Due Date</th>
-                                                    <th>Amount</th>
-                                                    <th>Status</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {invoices.map((invoice) => (
-                                                    <tr key={invoice.id}>
-                                                        <td>#{invoice.id}</td>
-                                                        <td>{formatDate(invoice.issued_date)}</td>
-                                                        <td>{formatDate(invoice.due_date)}</td>
-                                                        <td className="amount-cell">
-                                                            {formatCurrency(invoice.amount)}
-                                                        </td>
-                                                        <td>
-                                                            <span
-                                                                className={`status-badge ${getStatusClass(
-                                                                    invoice.invoice_status
-                                                                )}`}
-                                                            >
-                                                                {invoice.invoice_status}
-                                                            </span>
-                                                        </td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                            <tfoot>
-                                                <tr>
-                                                    <td colSpan={3}>
-                                                        <strong>Total</strong>
-                                                    </td>
+                            <div className="invoices-list">
+                                {invoices.length === 0 ? (
+                                    <div className="empty-list">
+                                        <p>No invoices found for this client.</p>
+                                    </div>
+                                ) : (
+                                    <table className="data-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Invoice #</th>
+                                                <th>Issue Date</th>
+                                                <th>Due Date</th>
+                                                <th>Amount</th>
+                                                <th>Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {invoices.map((invoice) => (
+                                                <tr key={invoice.id}>
+                                                    <td>#{invoice.id}</td>
+                                                    <td>{formatDate(invoice.issued_date)}</td>
+                                                    <td>{formatDate(invoice.due_date)}</td>
                                                     <td className="amount-cell">
-                                                        <strong>
-                                                            {formatCurrency(totalInvoiceAmount)}
-                                                        </strong>
+                                                        {formatCurrency(invoice.amount)}
                                                     </td>
-                                                    <td></td>
-                                                </tr>
-                                            </tfoot>
-                                        </table>
-                                    )}
-                                </div>
-                            )}
-
-                            {activeTab === ClientDetailTab.Expenses && (
-                                <div className="expenses-list">
-                                    {expenses.length === 0 ? (
-                                        <div className="empty-list">
-                                            <p>No expenses found for this client.</p>
-                                        </div>
-                                    ) : (
-                                        <table className="data-table">
-                                            <thead>
-                                                <tr>
-                                                    <th>Date</th>
-                                                    <th>Category</th>
-                                                    <th>Description</th>
-                                                    <th>Vendor</th>
-                                                    <th>Amount</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {expenses.map((expense) => (
-                                                    <tr key={expense.id}>
-                                                        <td>{formatDate(expense.date)}</td>
-                                                        <td>{expense.category}</td>
-                                                        <td>{expense.description || '-'}</td>
-                                                        <td>{expense.vendor || '-'}</td>
-                                                        <td className="amount-cell">
-                                                            {formatCurrency(expense.amount)}
-                                                        </td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                            <tfoot>
-                                                <tr>
-                                                    <td colSpan={4}>
-                                                        <strong>Total</strong>
-                                                    </td>
-                                                    <td className="amount-cell">
-                                                        <strong>
-                                                            {formatCurrency(totalExpenseAmount)}
-                                                        </strong>
+                                                    <td>
+                                                        <span
+                                                            className={`status-badge ${getStatusClass(
+                                                                invoice.invoice_status
+                                                            )}`}
+                                                        >
+                                                            {invoice.invoice_status}
+                                                        </span>
                                                     </td>
                                                 </tr>
-                                            </tfoot>
-                                        </table>
-                                    )}
-                                </div>
-                            )}
+                                            ))}
+                                        </tbody>
+                                        <tfoot>
+                                            <tr>
+                                                <td colSpan={3}>
+                                                    <strong>Total</strong>
+                                                </td>
+                                                <td className="amount-cell">
+                                                    <strong>
+                                                        {formatCurrency(totalInvoiceAmount)}
+                                                    </strong>
+                                                </td>
+                                                <td></td>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                )}
+                            </div>
                         </div>
                     )}
                 </div>

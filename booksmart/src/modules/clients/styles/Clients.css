@@ -210,7 +210,7 @@
     position: relative;
 }
 
-.search-input {
+.client-search-bar .search-input {
     width: 100%;
     padding: 12px 12px 12px 42px;
     border: 1px solid var(--border-color);
@@ -220,7 +220,7 @@
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-.search-input:focus {
+.client-search-bar .search-input:focus {
     outline: none;
     border-color: var(--primary-color);
     box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
@@ -999,6 +999,29 @@
 .detail-main {
     display: flex;
     flex-direction: column;
+}
+
+/* Section Header */
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.section-header h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-color);
+    margin: 0;
+}
+
+.invoice-count {
+    font-size: 14px;
+    color: var(--text-light);
+    background: var(--background);
+    padding: 4px 12px;
+    border-radius: 16px;
 }
 
 /* Tab Buttons */

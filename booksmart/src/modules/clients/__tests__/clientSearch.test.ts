@@ -15,7 +15,7 @@ import {
 
 const mockClients: Client[] = [
     {
-        id: 1,
+        id: 'client-uuid-1',
         name: 'Alice Johnson',
         email: 'alice@example.com',
         phone: '555-1234',
@@ -26,7 +26,7 @@ const mockClients: Client[] = [
         paid_invoice_count: 3,
     },
     {
-        id: 2,
+        id: 'client-uuid-2',
         name: 'Bob Smith',
         email: 'bob@testcompany.com',
         phone: '555-5678',
@@ -37,7 +37,7 @@ const mockClients: Client[] = [
         paid_invoice_count: 5,
     },
     {
-        id: 3,
+        id: 'client-uuid-3',
         name: 'Carol Williams',
         email: 'carol@widgets.io',
         phone: undefined,
@@ -48,7 +48,7 @@ const mockClients: Client[] = [
         paid_invoice_count: 0,
     },
     {
-        id: 4,
+        id: 'client-uuid-4',
         name: 'David Brown',
         email: 'david@tech.com',
         phone: '555-9999',

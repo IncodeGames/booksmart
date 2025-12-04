@@ -148,7 +148,7 @@ export const useClientStore = create<ClientStore>((set, get) => ({
         }
     },
 
-    updateClient: async (id: number, data: ClientFormData) => {
+    updateClient: async (id: string, data: ClientFormData) => {
         try {
             set({ error: null });
 
@@ -196,7 +196,7 @@ export const useClientStore = create<ClientStore>((set, get) => ({
         }
     },
 
-    deleteClient: async (id: number) => {
+    deleteClient: async (id: string) => {
         try {
             set({ error: null });
 
