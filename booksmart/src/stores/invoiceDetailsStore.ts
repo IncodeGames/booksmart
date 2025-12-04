@@ -18,6 +18,8 @@ export interface InvoiceDetail {
   issueDate: Date;
   dueDate: Date;
   total: number;
+  amountPaid: number;
+  amountDue: number;
   status: 'draft' | 'unpaid' | 'paid' | 'overdue';
   lineItems: InvoiceLineItem[];
 }
@@ -34,6 +36,7 @@ interface InvoiceDetailsState {
     startDate: string;
     endDate: string;
   };
+  datePreset: string;
   statusFilter: string;
   searchTerm: string;
 
@@ -44,11 +47,13 @@ interface InvoiceDetailsState {
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
   setDateRange: (dateRange: { startDate: string; endDate: string }) => void;
+  setDatePreset: (preset: string) => void;
   setStatusFilter: (filter: string) => void;
   setSearchTerm: (term: string) => void;
 
   // Data fetching
   fetchInvoiceDetails: () => Promise<void>;
+  deleteInvoice: (invoiceId: string | number) => Promise<boolean>;
   applyFilters: () => void;
 
   // Utilities
@@ -58,6 +63,7 @@ interface InvoiceDetailsState {
     outstandingCount: number;
     outstandingAmount: number;
   };
+  getDateRangeFromPreset: (preset: string) => { startDate: string; endDate: string };
 }
 
 export const useInvoiceDetailsStore = create<InvoiceDetailsState>((set, get) => ({
@@ -70,6 +76,7 @@ export const useInvoiceDetailsStore = create<InvoiceDetailsState>((set, get) => 
     startDate: '',
     endDate: '',
   },
+  datePreset: 'all',
   statusFilter: 'all',
   searchTerm: '',
 
@@ -78,9 +85,49 @@ export const useInvoiceDetailsStore = create<InvoiceDetailsState>((set, get) => 
   setExpandedInvoiceId: (expandedInvoiceId) => set({ expandedInvoiceId }),
   setLoading: (isLoading) => set({ isLoading }),
   setError: (error) => set({ error }),
-  setDateRange: (dateRange) => set({ dateRange }),
+  setDateRange: (dateRange) => set({ dateRange, datePreset: 'custom' }),
+  setDatePreset: (preset: string) => {
+    const { getDateRangeFromPreset } = get();
+    const dateRange = getDateRangeFromPreset(preset);
+    set({ datePreset: preset, dateRange });
+  },
   setStatusFilter: (statusFilter) => set({ statusFilter }),
   setSearchTerm: (searchTerm) => set({ searchTerm }),
+
+  getDateRangeFromPreset: (preset: string) => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth();
+    
+    const formatDate = (date: Date) => date.toISOString().split('T')[0];
+    
+    switch (preset) {
+      case 'this-month': {
+        const startDate = new Date(year, month, 1);
+        const endDate = new Date(year, month + 1, 0);
+        return { startDate: formatDate(startDate), endDate: formatDate(endDate) };
+      }
+      case 'this-quarter': {
+        const quarterStart = Math.floor(month / 3) * 3;
+        const startDate = new Date(year, quarterStart, 1);
+        const endDate = new Date(year, quarterStart + 3, 0);
+        return { startDate: formatDate(startDate), endDate: formatDate(endDate) };
+      }
+      case 'this-year': {
+        const startDate = new Date(year, 0, 1);
+        const endDate = new Date(year, 11, 31);
+        return { startDate: formatDate(startDate), endDate: formatDate(endDate) };
+      }
+      case 'last-year': {
+        const startDate = new Date(year - 1, 0, 1);
+        const endDate = new Date(year - 1, 11, 31);
+        return { startDate: formatDate(startDate), endDate: formatDate(endDate) };
+      }
+      case 'all':
+      default:
+        return { startDate: '', endDate: '' };
+    }
+  },
 
   fetchInvoiceDetails: async () => {
     const { setLoading, setError, setInvoices } = get();
@@ -123,6 +170,11 @@ export const useInvoiceDetailsStore = create<InvoiceDetailsState>((set, get) => 
           status = 'overdue';
         }
 
+        const total = Number(invoice.amount);
+        // For paid invoices, amount_paid equals total; for others, it's 0 (or could come from a payments table)
+        const amountPaid = status === 'paid' ? total : 0;
+        const amountDue = total - amountPaid;
+
         // Generate line items from invoice data
         // Since we don't have a separate line_items table, create a single line item from the invoice total
         const lineItems: InvoiceLineItem[] = [
@@ -130,8 +182,8 @@ export const useInvoiceDetailsStore = create<InvoiceDetailsState>((set, get) => 
             id: `${invoice.id}-1`,
             description: 'Services',
             quantity: 1,
-            rate: Number(invoice.amount),
-            amount: Number(invoice.amount),
+            rate: total,
+            amount: total,
           }
         ];
 
@@ -143,7 +195,9 @@ export const useInvoiceDetailsStore = create<InvoiceDetailsState>((set, get) => 
           clientCompany: invoice.clients?.company,
           issueDate,
           dueDate,
-          total: Number(invoice.amount),
+          total,
+          amountPaid,
+          amountDue,
           status,
           lineItems,
         };
@@ -156,6 +210,42 @@ export const useInvoiceDetailsStore = create<InvoiceDetailsState>((set, get) => 
       setError('Failed to load invoice details');
     } finally {
       setLoading(false);
+    }
+  },
+
+  deleteInvoice: async (invoiceId: string | number) => {
+    const { setError, invoices, setInvoices } = get();
+
+    try {
+      // Find the invoice to check its status
+      const invoice = invoices.find(inv => inv.id === invoiceId);
+      if (!invoice) {
+        setError('Invoice not found');
+        return false;
+      }
+
+      if (invoice.status !== 'draft') {
+        setError('Only draft invoices can be deleted');
+        return false;
+      }
+
+      const { error } = await supabase
+        .from('invoices')
+        .delete()
+        .eq('id', invoiceId);
+
+      if (error) throw error;
+
+      // Remove from local state
+      const updatedInvoices = invoices.filter(inv => inv.id !== invoiceId);
+      setInvoices(updatedInvoices);
+      get().applyFilters();
+
+      return true;
+    } catch (error) {
+      console.error('Error deleting invoice:', error);
+      setError('Failed to delete invoice');
+      return false;
     }
   },
 

@@ -18,13 +18,17 @@ const InvoiceDetails = ({ onBack }: InvoiceDetailsProps) => {
     isLoading,
     error,
     dateRange,
+    datePreset,
     statusFilter,
     searchTerm,
     setDateRange,
+    setDatePreset,
     setStatusFilter,
     setSearchTerm,
     setExpandedInvoiceId,
+    setError,
     fetchInvoiceDetails,
+    deleteInvoice,
     applyFilters,
     getTotals
   } = useInvoiceDetailsStore();
@@ -66,25 +70,48 @@ const InvoiceDetails = ({ onBack }: InvoiceDetailsProps) => {
     setExpandedInvoiceId(expandedInvoiceId === invoiceId ? null : invoiceId);
   };
 
+  const handleDeleteInvoice = async (e: React.MouseEvent, invoiceId: string | number) => {
+    e.stopPropagation(); // Prevent row expansion when clicking delete
+    
+    if (!window.confirm('Are you sure you want to delete this draft invoice? This action cannot be undone.')) {
+      return;
+    }
+
+    const success = await deleteInvoice(invoiceId);
+    if (success) {
+      // Clear expanded state if we deleted the expanded invoice
+      if (expandedInvoiceId === invoiceId) {
+        setExpandedInvoiceId(null);
+      }
+    }
+  };
+
+  const handleDatePresetChange = (preset: string) => {
+    setDatePreset(preset);
+  };
+
   const { paidCount, paidAmount, outstandingCount, outstandingAmount } = getTotals();
 
   // Export to CSV functionality
   const exportToCSV = () => {
-    const headers = ['Client ID', 'Invoice Number', 'Issue Date', 'Due Date', 'Total', 'Status'];
+    const headers = ['Client Name', 'Business Name', 'Invoice Number', 'Issue Date', 'Due Date', 'Total', 'Amount Paid', 'Amount Due', 'Status'];
     
     const csvData = filteredInvoices.map(invoice => [
-      invoice.clientId,
+      invoice.clientName,
+      invoice.clientCompany || '',
       invoice.invoiceNumber,
       formatDate(invoice.issueDate),
       formatDate(invoice.dueDate),
       invoice.total.toFixed(2),
+      invoice.amountPaid.toFixed(2),
+      invoice.amountDue.toFixed(2),
       invoice.status
     ]);
 
     // Add totals rows
     csvData.push([]);
-    csvData.push(['', '', '', 'Paid:', paidAmount.toFixed(2), `${paidCount} invoices`]);
-    csvData.push(['', '', '', 'Outstanding:', outstandingAmount.toFixed(2), `${outstandingCount} invoices`]);
+    csvData.push(['', '', '', '', 'Paid:', paidAmount.toFixed(2), '', '', `${paidCount} invoices`]);
+    csvData.push(['', '', '', '', 'Outstanding:', outstandingAmount.toFixed(2), '', '', `${outstandingCount} invoices`]);
 
     // Convert to CSV string
     const csvContent = [
@@ -160,13 +187,29 @@ const InvoiceDetails = ({ onBack }: InvoiceDetailsProps) => {
       {error && (
         <div className="error-banner">
           <span>{error}</span>
-          <button onClick={fetchInvoiceDetails}>Retry</button>
+          <button onClick={() => setError(null)}>Dismiss</button>
         </div>
       )}
 
       {/* Filters */}
       <div className="invoice-filters">
         <div className="filters-row">
+          <div className="filter-group">
+            <label htmlFor="datePreset">Quick Filter:</label>
+            <select
+              id="datePreset"
+              value={datePreset}
+              onChange={(e) => handleDatePresetChange(e.target.value)}
+            >
+              <option value="all">All Time</option>
+              <option value="this-month">This Month</option>
+              <option value="this-quarter">This Quarter</option>
+              <option value="this-year">This Year</option>
+              <option value="last-year">Last Year</option>
+              <option value="custom">Custom Range</option>
+            </select>
+          </div>
+
           <div className="filter-group">
             <label htmlFor="startDate">Start Date:</label>
             <input
@@ -234,19 +277,20 @@ const InvoiceDetails = ({ onBack }: InvoiceDetailsProps) => {
         <table className="invoice-table">
           <thead>
             <tr>
-              <th style={{ width: '30px' }}></th>
-              <th>Client ID</th>
+              <th className="expand-col"></th>
+              <th>Client</th>
               <th>Invoice #</th>
               <th>Issue Date</th>
               <th>Due Date</th>
               <th>Total</th>
               <th>Status</th>
+              <th className="actions-col">Actions</th>
             </tr>
           </thead>
           <tbody>
             {filteredInvoices.length === 0 ? (
               <tr>
-                <td colSpan={7} className="no-data">
+                <td colSpan={8} className="no-data">
                   No invoices found for the selected criteria
                 </td>
               </tr>
@@ -257,13 +301,18 @@ const InvoiceDetails = ({ onBack }: InvoiceDetailsProps) => {
                     className={`invoice-row ${invoice.status} ${expandedInvoiceId === invoice.id ? 'expanded' : ''}`}
                     onClick={() => toggleInvoiceExpand(invoice.id)}
                   >
-                    <td>
+                    <td className="expand-cell">
                       <span className={`expand-icon ${expandedInvoiceId === invoice.id ? 'expanded' : ''}`}>
                         ▶
                       </span>
                     </td>
-                    <td className="client-id-cell" title={invoice.clientName}>
-                      {invoice.clientId.slice(0, 8)}...
+                    <td className="client-cell">
+                      <div className="client-info">
+                        <span className="client-name">{invoice.clientName}</span>
+                        {invoice.clientCompany && (
+                          <span className="client-company">{invoice.clientCompany}</span>
+                        )}
+                      </div>
                     </td>
                     <td className="invoice-number-cell">{invoice.invoiceNumber}</td>
                     <td className="date-cell">{formatDate(invoice.issueDate)}</td>
@@ -274,43 +323,69 @@ const InvoiceDetails = ({ onBack }: InvoiceDetailsProps) => {
                         {getStatusIcon(invoice.status)} {invoice.status}
                       </span>
                     </td>
+                    <td className="actions-cell">
+                      {invoice.status === 'draft' && (
+                        <button
+                          className="delete-btn"
+                          onClick={(e) => handleDeleteInvoice(e, invoice.id)}
+                          title="Delete draft invoice"
+                        >
+                          🗑️
+                        </button>
+                      )}
+                    </td>
                   </tr>
-                  {expandedInvoiceId === invoice.id && (
-                    <tr className="line-items-row">
-                      <td colSpan={7}>
-                        <div className="line-items-container">
-                          <div className="line-items-header">
-                            📋 Line Items for {invoice.invoiceNumber}
-                            {invoice.clientCompany && (
-                              <span style={{ fontWeight: 'normal', marginLeft: '8px', color: '#6b7280' }}>
-                                ({invoice.clientCompany})
-                              </span>
-                            )}
-                          </div>
-                          <table className="line-items-table">
-                            <thead>
-                              <tr>
-                                <th>Description</th>
-                                <th style={{ textAlign: 'center' }}>Qty</th>
-                                <th style={{ textAlign: 'center' }}>Rate</th>
-                                <th style={{ textAlign: 'right' }}>Amount</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {invoice.lineItems.map((item) => (
-                                <tr key={item.id}>
-                                  <td>{item.description}</td>
-                                  <td className="quantity-cell">{item.quantity}</td>
-                                  <td className="rate-cell">{formatCurrency(item.rate)}</td>
-                                  <td className="amount-cell">{formatCurrency(item.amount)}</td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
+                  {/* Line items row - visible when expanded OR when printing */}
+                  <tr className={`line-items-row ${expandedInvoiceId === invoice.id ? 'expanded' : ''}`}>
+                    <td colSpan={8}>
+                      <div className="line-items-container">
+                        <div className="line-items-header">
+                          📋 Line Items for {invoice.invoiceNumber}
+                          {invoice.clientCompany && (
+                            <span style={{ fontWeight: 'normal', marginLeft: '8px', color: '#6b7280' }}>
+                              ({invoice.clientCompany})
+                            </span>
+                          )}
                         </div>
-                      </td>
-                    </tr>
-                  )}
+                        <table className="line-items-table">
+                          <thead>
+                            <tr>
+                              <th>Description</th>
+                              <th style={{ textAlign: 'center' }}>Qty</th>
+                              <th style={{ textAlign: 'center' }}>Rate</th>
+                              <th style={{ textAlign: 'right' }}>Amount</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {invoice.lineItems.map((item) => (
+                              <tr key={item.id}>
+                                <td>{item.description}</td>
+                                <td className="quantity-cell">{item.quantity}</td>
+                                <td className="rate-cell">{formatCurrency(item.rate)}</td>
+                                <td className="amount-cell">{formatCurrency(item.amount)}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                        <div className="invoice-summary">
+                          <div className="summary-row">
+                            <span className="summary-label">Invoice Total:</span>
+                            <span className="summary-value">{formatCurrency(invoice.total)}</span>
+                          </div>
+                          <div className="summary-row">
+                            <span className="summary-label">Amount Paid:</span>
+                            <span className="summary-value paid">{formatCurrency(invoice.amountPaid)}</span>
+                          </div>
+                          <div className="summary-row total">
+                            <span className="summary-label">Amount Due:</span>
+                            <span className={`summary-value ${invoice.amountDue > 0 ? 'outstanding' : 'paid'}`}>
+                              {formatCurrency(invoice.amountDue)}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
                 </React.Fragment>
               ))
             )}
