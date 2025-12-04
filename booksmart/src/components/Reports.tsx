@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router';
 import Sidebar from './Sidebar';
 import GeneralLedger from './reports/GeneralLedger';
 import ExpenseReports from './reports/ExpenseReports';
+import InvoiceDetails from './reports/InvoiceDetails';
 import './styles/Reports.css';
 
 type ReportType =
@@ -60,7 +61,7 @@ const Reports = ({ user, onSignOut }: ReportsProps) => {
       title: 'Invoice Details',
       description: 'Comprehensive invoice tracking and status reports',
       icon: '🧾',
-      available: false,
+      available: true,
     },
     {
       id: 'revenue-by-client',
@@ -93,7 +94,7 @@ const Reports = ({ user, onSignOut }: ReportsProps) => {
   ];
 
   const handleReportSelect = (reportId: ReportType) => {
-    if (reportId === 'general-ledger' || reportId === 'expense-reports') {
+    if (reportId === 'general-ledger' || reportId === 'expense-reports' || reportId === 'invoice-details') {
       setActiveReport(reportId);
     } else {
       // Show coming soon message for other reports
@@ -112,6 +113,8 @@ const Reports = ({ user, onSignOut }: ReportsProps) => {
         return <GeneralLedger onBack={handleBackToOverview} />;
       case 'expense-reports':
         return <ExpenseReports onBack={handleBackToOverview} />;
+      case 'invoice-details':
+        return <InvoiceDetails onBack={handleBackToOverview} />;
       case 'overview':
       default:
         return (
