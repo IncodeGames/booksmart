@@ -1,28 +1,6 @@
 import { create } from 'zustand';
-import { supabase } from '../lib/supabase';
-
-export interface InvoiceLineItem {
-  id: string;
-  description: string;
-  quantity: number;
-  rate: number;
-  amount: number;
-}
-
-export interface InvoiceDetail {
-  id: string | number;
-  invoiceNumber: string;
-  clientId: string;
-  clientName: string;
-  clientCompany?: string;
-  issueDate: Date;
-  dueDate: Date;
-  total: number;
-  amountPaid: number;
-  amountDue: number;
-  status: 'draft' | 'unpaid' | 'paid' | 'overdue';
-  lineItems: InvoiceLineItem[];
-}
+import { supabase } from '../../../lib/supabase';
+import { InvoiceDetail, InvoiceLineItem, DateRange } from '../types';
 
 interface InvoiceDetailsState {
   invoices: InvoiceDetail[];
@@ -32,10 +10,7 @@ interface InvoiceDetailsState {
   error: string | null;
 
   // Filter states
-  dateRange: {
-    startDate: string;
-    endDate: string;
-  };
+  dateRange: DateRange;
   datePreset: string;
   statusFilter: string;
   searchTerm: string;
@@ -46,7 +21,7 @@ interface InvoiceDetailsState {
   setExpandedInvoiceId: (id: string | number | null) => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
-  setDateRange: (dateRange: { startDate: string; endDate: string }) => void;
+  setDateRange: (dateRange: DateRange) => void;
   setDatePreset: (preset: string) => void;
   setStatusFilter: (filter: string) => void;
   setSearchTerm: (term: string) => void;
@@ -63,7 +38,7 @@ interface InvoiceDetailsState {
     outstandingCount: number;
     outstandingAmount: number;
   };
-  getDateRangeFromPreset: (preset: string) => { startDate: string; endDate: string };
+  getDateRangeFromPreset: (preset: string) => DateRange;
 }
 
 export const useInvoiceDetailsStore = create<InvoiceDetailsState>((set, get) => ({
@@ -94,7 +69,7 @@ export const useInvoiceDetailsStore = create<InvoiceDetailsState>((set, get) => 
   setStatusFilter: (statusFilter) => set({ statusFilter }),
   setSearchTerm: (searchTerm) => set({ searchTerm }),
 
-  getDateRangeFromPreset: (preset: string) => {
+  getDateRangeFromPreset: (preset: string): DateRange => {
     const now = new Date();
     const year = now.getFullYear();
     const month = now.getMonth();

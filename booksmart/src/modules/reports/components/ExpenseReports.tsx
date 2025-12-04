@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
-import { supabase } from '../../lib/supabase';
-import { Expense } from '../../types';
-import DropdownButton, { DropdownOption } from '../DropdownButton';
+import { useEffect, useState } from 'react';
+import { supabase } from '../../../lib/supabase';
+import { Expense } from '../../../types';
+import DropdownButton, { DropdownOption } from '../../../components/DropdownButton';
 import '../styles/ExpenseReports.css';
 
 interface ExpenseReportsProps {

@@ -1,6 +1,6 @@
-import React, { useEffect } from 'react';
-import { useLedgerStore } from '../../stores/ledgerStore';
-import DropdownButton, { DropdownOption } from '../DropdownButton';
+import { useEffect } from 'react';
+import { useLedgerStore } from '../../../stores/ledgerStore';
+import DropdownButton, { DropdownOption } from '../../../components/DropdownButton';
 import '../styles/GeneralLedger.css';
 
 interface GeneralLedgerProps {

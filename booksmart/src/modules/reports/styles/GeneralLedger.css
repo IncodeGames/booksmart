@@ -435,8 +435,11 @@
 /* Print Styles */
 @media print {
     .general-ledger {
-        padding: 0;
+        padding: 20px;
         background: white;
+        width: 80%;
+        max-width: 80%;
+        margin: 0 auto;
     }
 
     .back-button,
@@ -446,18 +449,18 @@
     }
 
     .general-ledger-header {
-        margin-bottom: 20px;
+        margin-bottom: 12px;
         page-break-after: avoid;
     }
 
     .page-title {
-        font-size: 1.5rem;
+        font-size: 1.25rem;
         text-align: center;
     }
 
     .page-subtitle {
-        font-size: 0.875rem;
-        margin-bottom: 10px;
+        font-size: 0.75rem;
+        margin-bottom: 8px;
     }
 
     .ledger-table-container {
@@ -466,16 +469,18 @@
     }
 
     .ledger-table {
-        font-size: 0.75rem;
+        font-size: 0.7rem;
     }
 
     .ledger-table th {
         background: #f0f0f0;
-        border-bottom: 2px solid #000;
+        border-bottom: 1px solid #000;
+        padding: 6px 8px;
     }
 
     .ledger-table td {
         border-bottom: 1px solid #ccc;
+        padding: 6px 8px;
     }
 
     .ledger-row {
@@ -483,7 +488,7 @@
     }
 
     .ledger-footer {
-        margin-top: 20px;
+        margin-top: 12px;
         page-break-before: avoid;
     }
 
@@ -496,8 +501,8 @@
         content: "Printed on " attr(data-print-date);
         display: block;
         text-align: center;
-        margin-top: 20px;
-        font-size: 0.75rem;
+        margin-top: 12px;
+        font-size: 0.6rem;
         color: #666;
     }
 }

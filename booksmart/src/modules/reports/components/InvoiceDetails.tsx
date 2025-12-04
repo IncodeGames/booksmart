@@ -1,10 +1,18 @@
-import React, { useEffect } from 'react';
-import { useInvoiceDetailsStore } from '../../stores/invoiceDetailsStore';
-import DropdownButton, { DropdownOption } from '../DropdownButton';
+import React, { useEffect, useState } from 'react';
+import { useInvoiceDetailsStore } from '../stores/invoiceDetailsStore';
+import { supabase } from '../../../lib/supabase';
+import DropdownButton, { DropdownOption } from '../../../components/DropdownButton';
 import '../styles/InvoiceDetails.css';
 
 interface InvoiceDetailsProps {
   onBack: () => void;
+}
+
+interface Client {
+  id: string;
+  name: string;
+  email: string;
+  company?: string;
 }
 
 /**
@@ -33,13 +41,42 @@ const InvoiceDetails = ({ onBack }: InvoiceDetailsProps) => {
     getTotals
   } = useInvoiceDetailsStore();
 
+  // Email modal state
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [emailRecipientType, setEmailRecipientType] = useState<'client' | 'custom'>('custom');
+  const [selectedClientId, setSelectedClientId] = useState('');
+  const [customEmail, setCustomEmail] = useState('');
+  const [emailSubject, setEmailSubject] = useState('Invoice Details Report');
+  const [emailMessage, setEmailMessage] = useState('');
+  const [clients, setClients] = useState<Client[]>([]);
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
+
   useEffect(() => {
     fetchInvoiceDetails();
+    fetchClients();
   }, [fetchInvoiceDetails]);
 
   useEffect(() => {
     applyFilters();
   }, [dateRange, statusFilter, searchTerm, applyFilters]);
+
+  const fetchClients = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from('clients')
+        .select('id, name, email, company')
+        .eq('user_id', user.id)
+        .order('name');
+
+      if (error) throw error;
+      setClients(data || []);
+    } catch (err) {
+      console.error('Error fetching clients:', err);
+    }
+  };
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -92,6 +129,148 @@ const InvoiceDetails = ({ onBack }: InvoiceDetailsProps) => {
 
   const { paidCount, paidAmount, outstandingCount, outstandingAmount } = getTotals();
 
+  // Generate report HTML for email
+  const generateReportHTML = () => {
+    const reportDate = new Date().toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+
+    const invoiceRows = filteredInvoices.map(invoice => `
+      <tr style="border-bottom: 1px solid #e5e7eb;">
+        <td style="padding: 12px 8px;">${invoice.clientName}${invoice.clientCompany ? `<br><small style="color: #6b7280;">${invoice.clientCompany}</small>` : ''}</td>
+        <td style="padding: 12px 8px; font-weight: 600;">${invoice.invoiceNumber}</td>
+        <td style="padding: 12px 8px;">${formatDate(invoice.issueDate)}</td>
+        <td style="padding: 12px 8px;">${formatDate(invoice.dueDate)}</td>
+        <td style="padding: 12px 8px; text-align: right; font-weight: 600;">${formatCurrency(invoice.total)}</td>
+        <td style="padding: 12px 8px;">
+          <span style="padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; ${
+            invoice.status === 'paid' ? 'background: #dcfce7; color: #166534;' :
+            invoice.status === 'overdue' ? 'background: #fee2e2; color: #991b1b;' :
+            invoice.status === 'unpaid' ? 'background: #fef3c7; color: #92400e;' :
+            'background: #f3f4f6; color: #4b5563;'
+          }">${invoice.status}</span>
+        </td>
+      </tr>
+    `).join('');
+
+    return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <title>Invoice Details Report</title>
+      </head>
+      <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; padding: 20px;">
+        <div style="text-align: center; margin-bottom: 30px;">
+          <h1 style="color: #111827; margin: 0;">Invoice Details Report</h1>
+          <p style="color: #6b7280; margin: 5px 0;">Generated on ${reportDate}</p>
+        </div>
+
+        <div style="display: flex; justify-content: space-around; margin-bottom: 30px; padding: 20px; background: #f9fafb; border-radius: 8px;">
+          <div style="text-align: center;">
+            <div style="font-size: 12px; color: #6b7280; text-transform: uppercase;">Total Paid</div>
+            <div style="font-size: 24px; font-weight: 700; color: #059669;">${formatCurrency(paidAmount)}</div>
+            <div style="font-size: 12px; color: #6b7280;">${paidCount} invoice${paidCount !== 1 ? 's' : ''}</div>
+          </div>
+          <div style="text-align: center;">
+            <div style="font-size: 12px; color: #6b7280; text-transform: uppercase;">Total Outstanding</div>
+            <div style="font-size: 24px; font-weight: 700; color: #dc2626;">${formatCurrency(outstandingAmount)}</div>
+            <div style="font-size: 12px; color: #6b7280;">${outstandingCount} invoice${outstandingCount !== 1 ? 's' : ''}</div>
+          </div>
+        </div>
+
+        ${emailMessage ? `
+          <div style="background: #f0f9ff; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+            <p style="margin: 0;">${emailMessage}</p>
+          </div>
+        ` : ''}
+
+        <table style="width: 100%; border-collapse: collapse; border: 1px solid #e5e7eb; border-radius: 8px;">
+          <thead>
+            <tr style="background: #f3f4f6;">
+              <th style="padding: 12px 8px; text-align: left; font-size: 12px; text-transform: uppercase; color: #374151;">Client</th>
+              <th style="padding: 12px 8px; text-align: left; font-size: 12px; text-transform: uppercase; color: #374151;">Invoice #</th>
+              <th style="padding: 12px 8px; text-align: left; font-size: 12px; text-transform: uppercase; color: #374151;">Issue Date</th>
+              <th style="padding: 12px 8px; text-align: left; font-size: 12px; text-transform: uppercase; color: #374151;">Due Date</th>
+              <th style="padding: 12px 8px; text-align: right; font-size: 12px; text-transform: uppercase; color: #374151;">Total</th>
+              <th style="padding: 12px 8px; text-align: left; font-size: 12px; text-transform: uppercase; color: #374151;">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${invoiceRows}
+          </tbody>
+        </table>
+
+        <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; color: #6b7280; font-size: 14px;">
+          <p>This report contains ${filteredInvoices.length} invoice${filteredInvoices.length !== 1 ? 's' : ''}.</p>
+        </div>
+      </body>
+      </html>
+    `;
+  };
+
+  // Handle sending email
+  const handleSendEmail = async () => {
+    const recipientEmail = emailRecipientType === 'client' 
+      ? clients.find(c => c.id === selectedClientId)?.email 
+      : customEmail;
+
+    if (!recipientEmail) {
+      setError('Please provide an email address');
+      return;
+    }
+
+    setIsSendingEmail(true);
+
+    try {
+      // Use EmailService to send the report
+      const response = await fetch('https://api.smtp2go.com/v3/email/send', {
+        method: 'POST',
+        headers: {
+          accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          api_key: import.meta.env.VITE_SMTP2GO_API_KEY,
+          to: [recipientEmail],
+          sender: import.meta.env.VITE_FROM_EMAIL || 'noreply@yourcompany.com',
+          subject: emailSubject,
+          html_body: generateReportHTML(),
+        })
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || result.data?.succeeded === 0) {
+        throw new Error(result.data?.error || 'Failed to send email');
+      }
+
+      alert('Report sent successfully!');
+      setShowEmailModal(false);
+      resetEmailForm();
+    } catch (err: any) {
+      console.error('Error sending email:', err);
+      setError(err.message || 'Failed to send email');
+    } finally {
+      setIsSendingEmail(false);
+    }
+  };
+
+  const resetEmailForm = () => {
+    setEmailRecipientType('custom');
+    setSelectedClientId('');
+    setCustomEmail('');
+    setEmailSubject('Invoice Details Report');
+    setEmailMessage('');
+  };
+
+  const openEmailModal = () => {
+    resetEmailForm();
+    setShowEmailModal(true);
+  };
+
   // Export to CSV functionality
   const exportToCSV = () => {
     const headers = ['Client Name', 'Business Name', 'Invoice Number', 'Issue Date', 'Due Date', 'Total', 'Amount Paid', 'Amount Due', 'Status'];
@@ -143,6 +322,12 @@ const InvoiceDetails = ({ onBack }: InvoiceDetailsProps) => {
       value: 'export-csv',
       icon: '📊',
       onClick: exportToCSV
+    },
+    {
+      label: 'Email Report',
+      value: 'email',
+      icon: '📧',
+      onClick: openEmailModal
     },
     {
       label: 'Print',
@@ -397,6 +582,104 @@ const InvoiceDetails = ({ onBack }: InvoiceDetailsProps) => {
         <div className="invoice-footer">
           <div className="results-count">
             Showing {filteredInvoices.length} invoice{filteredInvoices.length !== 1 ? 's' : ''}
+          </div>
+        </div>
+      )}
+
+      {/* Email Modal */}
+      {showEmailModal && (
+        <div className="email-modal-overlay" onClick={() => setShowEmailModal(false)}>
+          <div className="email-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="email-modal-header">
+              <h2>📧 Email Report</h2>
+              <button className="email-modal-close" onClick={() => setShowEmailModal(false)}>
+                ×
+              </button>
+            </div>
+            
+            <div className="email-modal-body">
+              <div className="email-form-group">
+                <label>Send To:</label>
+                <div className="email-recipient-toggle">
+                  <button
+                    type="button"
+                    className={emailRecipientType === 'client' ? 'active' : ''}
+                    onClick={() => setEmailRecipientType('client')}
+                  >
+                    Select Client
+                  </button>
+                  <button
+                    type="button"
+                    className={emailRecipientType === 'custom' ? 'active' : ''}
+                    onClick={() => setEmailRecipientType('custom')}
+                  >
+                    Enter Email
+                  </button>
+                </div>
+
+                {emailRecipientType === 'client' ? (
+                  <select
+                    value={selectedClientId}
+                    onChange={(e) => setSelectedClientId(e.target.value)}
+                  >
+                    <option value="">Select a client...</option>
+                    {clients.filter(c => c.email).map(client => (
+                      <option key={client.id} value={client.id}>
+                        {client.name} {client.company ? `(${client.company})` : ''} - {client.email}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    type="email"
+                    placeholder="recipient@example.com"
+                    value={customEmail}
+                    onChange={(e) => setCustomEmail(e.target.value)}
+                  />
+                )}
+              </div>
+
+              <div className="email-form-group">
+                <label htmlFor="emailSubject">Subject:</label>
+                <input
+                  type="text"
+                  id="emailSubject"
+                  value={emailSubject}
+                  onChange={(e) => setEmailSubject(e.target.value)}
+                />
+              </div>
+
+              <div className="email-form-group">
+                <label htmlFor="emailMessage">Message (optional):</label>
+                <textarea
+                  id="emailMessage"
+                  placeholder="Add a personal message to include with the report..."
+                  value={emailMessage}
+                  onChange={(e) => setEmailMessage(e.target.value)}
+                />
+                <div className="helper-text">
+                  The report will include {filteredInvoices.length} invoice{filteredInvoices.length !== 1 ? 's' : ''} based on current filters.
+                </div>
+              </div>
+            </div>
+
+            <div className="email-modal-footer">
+              <button 
+                type="button" 
+                className="email-cancel-btn"
+                onClick={() => setShowEmailModal(false)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="email-send-btn"
+                onClick={handleSendEmail}
+                disabled={isSendingEmail || (emailRecipientType === 'client' ? !selectedClientId : !customEmail)}
+              >
+                {isSendingEmail ? 'Sending...' : 'Send Report'}
+              </button>
+            </div>
           </div>
         </div>
       )}
