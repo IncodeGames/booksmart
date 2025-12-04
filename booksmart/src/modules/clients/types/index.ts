@@ -26,6 +26,11 @@ export enum SortDirection {
     Descending = 'desc',
 }
 
+export enum ClientDetailTab {
+    Invoices = 'invoices',
+    Expenses = 'expenses',
+}
+
 export interface Client {
     id: number;
     name: string;
@@ -58,6 +63,32 @@ export interface ClientInvoiceSummary {
     outstanding_count: number;
     paid_count: number;
     outstanding_amount: number;
+}
+
+export interface ClientInvoice {
+    id: number;
+    amount: number;
+    created_at: string;
+    invoice_status: InvoiceStatus;
+    client_id: number;
+    due_date: string;
+    issued_date: string;
+}
+
+export interface ClientExpense {
+    id: number;
+    amount: number;
+    description?: string;
+    category: string;
+    date: string;
+    vendor?: string;
+    created_at: string;
+}
+
+export interface InvoiceChartData {
+    name: string;
+    value: number;
+    color: string;
 }
 
 export interface User {

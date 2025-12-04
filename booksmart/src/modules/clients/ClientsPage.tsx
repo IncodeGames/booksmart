@@ -6,11 +6,17 @@ import {
     ClientModalMode,
     DeleteConfirmModal,
     ClientSearchBar,
+    ClientDetailPage,
 } from './components';
 import { useClientStore } from './stores/clientStore';
 import { Client, ClientFormData, ClientsPageProps } from './types';
 import '../../components/styles/base.css';
 import './styles/Clients.css';
+
+enum PageView {
+    List = 'list',
+    Detail = 'detail',
+}
 
 const ClientsPage: React.FC<ClientsPageProps> = ({ user, onSignOut }) => {
     const {
@@ -27,6 +33,10 @@ const ClientsPage: React.FC<ClientsPageProps> = ({ user, onSignOut }) => {
         resetFilters,
         clearError,
     } = useClientStore();
+
+    // View state
+    const [currentView, setCurrentView] = useState<PageView>(PageView.List);
+    const [viewingClient, setViewingClient] = useState<Client | null>(null);
 
     // Modal state
     const [isCreateModalOpen, setIsCreateModalOpen] = useState<boolean>(false);
@@ -131,6 +141,30 @@ const ClientsPage: React.FC<ClientsPageProps> = ({ user, onSignOut }) => {
     const handleDismissError = useCallback((): void => {
         clearError();
     }, [clearError]);
+
+    const handleViewClientDetails = useCallback((client: Client): void => {
+        setViewingClient(client);
+        setCurrentView(PageView.Detail);
+    }, []);
+
+    const handleBackToList = useCallback((): void => {
+        setViewingClient(null);
+        setCurrentView(PageView.List);
+        // Refresh the clients list in case there were changes
+        fetchClients();
+    }, [fetchClients]);
+
+    // Render detail page if viewing a client
+    if (currentView === PageView.Detail && viewingClient) {
+        return (
+            <div className="clients-page">
+                <Sidebar />
+                <div className="page-content">
+                    <ClientDetailPage client={viewingClient} onBack={handleBackToList} />
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="clients-page">
@@ -241,6 +275,7 @@ const ClientsPage: React.FC<ClientsPageProps> = ({ user, onSignOut }) => {
                                                 client={client}
                                                 onEdit={handleOpenEditModal}
                                                 onDelete={handleOpenDeleteModal}
+                                                onViewDetails={handleViewClientDetails}
                                             />
                                         ))}
                                     </div>

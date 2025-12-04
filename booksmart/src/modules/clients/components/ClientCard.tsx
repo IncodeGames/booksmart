@@ -5,9 +5,10 @@ interface ClientCardProps {
     client: Client;
     onEdit: (client: Client) => void;
     onDelete: (client: Client) => void;
+    onViewDetails: (client: Client) => void;
 }
 
-const ClientCard: React.FC<ClientCardProps> = ({ client, onEdit, onDelete }) => {
+const ClientCard: React.FC<ClientCardProps> = ({ client, onEdit, onDelete, onViewDetails }) => {
     const formatCurrency = (amount: number): string => {
         return new Intl.NumberFormat('en-US', {
             style: 'currency',
@@ -26,9 +27,14 @@ const ClientCard: React.FC<ClientCardProps> = ({ client, onEdit, onDelete }) => 
     return (
         <div className="client-card">
             <div className="client-header">
-                <div className="client-avatar">
+                <button
+                    className="client-avatar client-avatar-btn"
+                    onClick={() => onViewDetails(client)}
+                    title={`View ${client.name}'s history`}
+                    aria-label={`View ${client.name}'s invoice and expense history`}
+                >
                     {client.name.charAt(0).toUpperCase()}
-                </div>
+                </button>
                 <div className="client-info">
                     <h3>{client.name}</h3>
                     {client.company && (
