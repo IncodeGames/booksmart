@@ -1,7 +1,10 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import { supabase } from '../../../lib/supabase';
-import { Client, ClientInvoice } from '../types';
+import CreateInvoice from '../../../components/CreateInvoice';
+import AddExpenseModal from '../../../components/AddExpenseModal';
+import { Expense } from '../../../types';
+import { Client, ClientInvoice, ClientExpense, ClientDetailTab } from '../types';
 import {
     calculateInvoiceChartData,
     calculateTotalAmount,
@@ -12,15 +15,28 @@ import {
 
 interface ClientDetailPageProps {
     client: Client;
+    user: { email?: string };
     onBack: () => void;
+    onSignOut: () => void;
 }
 
-const ClientDetailPage: React.FC<ClientDetailPageProps> = ({ client, onBack }) => {
+const ClientDetailPage: React.FC<ClientDetailPageProps> = ({
+    client,
+    user,
+    onBack,
+    onSignOut,
+}) => {
+    const [activeTab, setActiveTab] = useState<ClientDetailTab>(ClientDetailTab.Invoices);
     const [invoices, setInvoices] = useState<ClientInvoice[]>([]);
+    const [expenses, setExpenses] = useState<ClientExpense[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
 
-    const fetchClientInvoices = useCallback(async (): Promise<void> => {
+    // Modal states
+    const [showCreateInvoice, setShowCreateInvoice] = useState<boolean>(false);
+    const [showAddExpense, setShowAddExpense] = useState<boolean>(false);
+
+    const fetchClientData = useCallback(async (): Promise<void> => {
         try {
             setLoading(true);
             setError(null);
@@ -34,10 +50,20 @@ const ClientDetailPage: React.FC<ClientDetailPageProps> = ({ client, onBack }) =
 
             if (invoicesError) throw invoicesError;
 
+            // Fetch expenses for this client
+            const { data: expensesData, error: expensesError } = await supabase
+                .from('expenses')
+                .select('id, amount, description, category, date, vendor, payment_method, created_at, client_id')
+                .eq('client_id', client.id)
+                .order('date', { ascending: false });
+
+            if (expensesError) throw expensesError;
+
             setInvoices(invoicesData || []);
+            setExpenses(expensesData || []);
         } catch (err) {
-            const errorMessage = err instanceof Error ? err.message : 'Failed to load client invoices';
-            console.error('Error fetching client invoices:', err);
+            const errorMessage = err instanceof Error ? err.message : 'Failed to load client data';
+            console.error('Error fetching client data:', err);
             setError(errorMessage);
         } finally {
             setLoading(false);
@@ -45,11 +71,43 @@ const ClientDetailPage: React.FC<ClientDetailPageProps> = ({ client, onBack }) =
     }, [client.id]);
 
     useEffect(() => {
-        fetchClientInvoices();
-    }, [fetchClientInvoices]);
+        fetchClientData();
+    }, [fetchClientData]);
 
     const invoiceChartData = useMemo(() => calculateInvoiceChartData(invoices), [invoices]);
     const totalInvoiceAmount = useMemo(() => calculateTotalAmount(invoices), [invoices]);
+    const totalExpenseAmount = useMemo(
+        () => expenses.reduce((sum, exp) => sum + exp.amount, 0),
+        [expenses]
+    );
+
+    // Handler for adding expense
+    const handleAddExpense = async (
+        expenseData: Omit<Expense, 'id' | 'created_at'>
+    ): Promise<boolean> => {
+        try {
+            const response = await supabase.auth.getUser();
+            expenseData.user_id = response?.data?.user?.id;
+            const { error } = await supabase.from('expenses').insert([expenseData]);
+
+            if (error) throw error;
+
+            // Refresh data
+            await fetchClientData();
+            setShowAddExpense(false);
+            return true;
+        } catch (err) {
+            console.error('Error adding expense:', err);
+            setError(err instanceof Error ? err.message : 'Failed to add expense');
+            return false;
+        }
+    };
+
+    // Handler for when invoice is created
+    const handleInvoiceCreated = (): void => {
+        setShowCreateInvoice(false);
+        fetchClientData();
+    };
 
     const renderCustomLabel = ({
         cx,
@@ -87,6 +145,18 @@ const ClientDetailPage: React.FC<ClientDetailPageProps> = ({ client, onBack }) =
         );
     };
 
+    // Show CreateInvoice page
+    if (showCreateInvoice) {
+        return (
+            <CreateInvoice
+                user={user}
+                onSignOut={onSignOut}
+                onBack={handleInvoiceCreated}
+                preselectedClientId={client.id}
+            />
+        );
+    }
+
     return (
         <div className="client-detail-page">
             <div className="detail-header">
@@ -94,6 +164,20 @@ const ClientDetailPage: React.FC<ClientDetailPageProps> = ({ client, onBack }) =
                     ← Back to Clients
                 </button>
                 <h1>Client Details</h1>
+                <div className="detail-header-actions">
+                    <button
+                        className="create-btn"
+                        onClick={() => setShowAddExpense(true)}
+                    >
+                        + Add Expense
+                    </button>
+                    <button
+                        className="create-btn primary"
+                        onClick={() => setShowCreateInvoice(true)}
+                    >
+                        + Create Invoice
+                    </button>
+                </div>
             </div>
 
             {error && (
@@ -152,9 +236,8 @@ const ClientDetailPage: React.FC<ClientDetailPageProps> = ({ client, onBack }) =
                         <div className="client-balance">
                             <span className="balance-label">Outstanding Balance</span>
                             <span
-                                className={`balance-value ${
-                                    client.outstanding_amount > 0 ? 'has-balance' : ''
-                                }`}
+                                className={`balance-value ${client.outstanding_amount > 0 ? 'has-balance' : ''
+                                    }`}
                             >
                                 {formatCurrency(client.outstanding_amount)}
                             </span>
@@ -196,77 +279,156 @@ const ClientDetailPage: React.FC<ClientDetailPageProps> = ({ client, onBack }) =
                     )}
                 </div>
 
-                {/* Invoices List */}
+                {/* Tabs and Lists */}
                 <div className="detail-main">
-                    <div className="section-header">
-                        <h3>Invoice History</h3>
-                        <span className="invoice-count">{invoices.length} invoice{invoices.length !== 1 ? 's' : ''}</span>
+                    <div className="tab-buttons">
+                        <button
+                            className={`tab-btn ${activeTab === ClientDetailTab.Invoices ? 'active' : ''}`}
+                            onClick={() => setActiveTab(ClientDetailTab.Invoices)}
+                        >
+                            Invoices ({invoices.length})
+                        </button>
+                        <button
+                            className={`tab-btn ${activeTab === ClientDetailTab.Expenses ? 'active' : ''}`}
+                            onClick={() => setActiveTab(ClientDetailTab.Expenses)}
+                        >
+                            Expenses ({expenses.length})
+                        </button>
                     </div>
 
                     {loading ? (
                         <div className="loading-container">
                             <div className="loading-spinner"></div>
-                            <p>Loading invoices...</p>
+                            <p>Loading...</p>
                         </div>
                     ) : (
                         <div className="tab-content">
-                            <div className="invoices-list">
-                                {invoices.length === 0 ? (
-                                    <div className="empty-list">
-                                        <p>No invoices found for this client.</p>
-                                    </div>
-                                ) : (
-                                    <table className="data-table">
-                                        <thead>
-                                            <tr>
-                                                <th>Invoice #</th>
-                                                <th>Issue Date</th>
-                                                <th>Due Date</th>
-                                                <th>Amount</th>
-                                                <th>Status</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {invoices.map((invoice) => (
-                                                <tr key={invoice.id}>
-                                                    <td>#{invoice.id}</td>
-                                                    <td>{formatDate(invoice.issued_date)}</td>
-                                                    <td>{formatDate(invoice.due_date)}</td>
-                                                    <td className="amount-cell">
-                                                        {formatCurrency(invoice.amount)}
+                            {activeTab === ClientDetailTab.Invoices && (
+                                <div className="invoices-list">
+                                    {invoices.length === 0 ? (
+                                        <div className="empty-list">
+                                            <p>No invoices found for this client.</p>
+                                            <button
+                                                className="create-btn primary"
+                                                onClick={() => setShowCreateInvoice(true)}
+                                            >
+                                                + Create First Invoice
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <table className="data-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Invoice #</th>
+                                                    <th>Issue Date</th>
+                                                    <th>Due Date</th>
+                                                    <th>Amount</th>
+                                                    <th>Status</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {invoices.map((invoice) => (
+                                                    <tr key={invoice.id}>
+                                                        <td>#{invoice.id}</td>
+                                                        <td>{formatDate(invoice.issued_date)}</td>
+                                                        <td>{formatDate(invoice.due_date)}</td>
+                                                        <td className="amount-cell">
+                                                            {formatCurrency(invoice.amount)}
+                                                        </td>
+                                                        <td>
+                                                            <span
+                                                                className={`status-badge ${getStatusClass(
+                                                                    invoice.invoice_status
+                                                                )}`}
+                                                            >
+                                                                {invoice.invoice_status}
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                            <tfoot>
+                                                <tr>
+                                                    <td colSpan={3}>
+                                                        <strong>Total</strong>
                                                     </td>
-                                                    <td>
-                                                        <span
-                                                            className={`status-badge ${getStatusClass(
-                                                                invoice.invoice_status
-                                                            )}`}
-                                                        >
-                                                            {invoice.invoice_status}
-                                                        </span>
+                                                    <td className="amount-cell">
+                                                        <strong>
+                                                            {formatCurrency(totalInvoiceAmount)}
+                                                        </strong>
+                                                    </td>
+                                                    <td></td>
+                                                </tr>
+                                            </tfoot>
+                                        </table>
+                                    )}
+                                </div>
+                            )}
+
+                            {activeTab === ClientDetailTab.Expenses && (
+                                <div className="expenses-list">
+                                    {expenses.length === 0 ? (
+                                        <div className="empty-list">
+                                            <p>No expenses found for this client.</p>
+                                            <button
+                                                className="create-btn primary"
+                                                onClick={() => setShowAddExpense(true)}
+                                            >
+                                                + Add First Expense
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <table className="data-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Date</th>
+                                                    <th>Category</th>
+                                                    <th>Description</th>
+                                                    <th>Vendor</th>
+                                                    <th>Amount</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {expenses.map((expense) => (
+                                                    <tr key={expense.id}>
+                                                        <td>{formatDate(expense.date)}</td>
+                                                        <td>{expense.category}</td>
+                                                        <td>{expense.description || '-'}</td>
+                                                        <td>{expense.vendor || '-'}</td>
+                                                        <td className="amount-cell">
+                                                            {formatCurrency(expense.amount)}
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                            <tfoot>
+                                                <tr>
+                                                    <td colSpan={4}>
+                                                        <strong>Total</strong>
+                                                    </td>
+                                                    <td className="amount-cell">
+                                                        <strong>
+                                                            {formatCurrency(totalExpenseAmount)}
+                                                        </strong>
                                                     </td>
                                                 </tr>
-                                            ))}
-                                        </tbody>
-                                        <tfoot>
-                                            <tr>
-                                                <td colSpan={3}>
-                                                    <strong>Total</strong>
-                                                </td>
-                                                <td className="amount-cell">
-                                                    <strong>
-                                                        {formatCurrency(totalInvoiceAmount)}
-                                                    </strong>
-                                                </td>
-                                                <td></td>
-                                            </tr>
-                                        </tfoot>
-                                    </table>
-                                )}
-                            </div>
+                                            </tfoot>
+                                        </table>
+                                    )}
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>
             </div>
+
+            {/* Add Expense Modal */}
+            <AddExpenseModal
+                isOpen={showAddExpense}
+                onClose={() => setShowAddExpense(false)}
+                onSubmit={handleAddExpense}
+                preselectedClientId={client.id}
+            />
         </div>
     );
 };

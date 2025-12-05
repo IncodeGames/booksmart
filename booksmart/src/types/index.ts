@@ -32,6 +32,7 @@ export interface TimerState {
 export interface Expense {
     id: string;
     user_id?: string;
+    client_id?: string;
     category: string;
     amount: number;
     description?: string;

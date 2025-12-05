@@ -160,7 +160,12 @@ const ClientsPage: React.FC<ClientsPageProps> = ({ user, onSignOut }) => {
             <div className="clients-page">
                 <Sidebar />
                 <div className="page-content">
-                    <ClientDetailPage client={viewingClient} onBack={handleBackToList} />
+                    <ClientDetailPage
+                        client={viewingClient}
+                        user={user}
+                        onBack={handleBackToList}
+                        onSignOut={onSignOut}
+                    />
                 </div>
             </div>
         );

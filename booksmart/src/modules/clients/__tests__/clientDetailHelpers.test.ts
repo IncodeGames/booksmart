@@ -4,8 +4,10 @@ import {
     formatCurrency,
     formatDate,
     getStatusClass,
+    calculateExpenseTotal,
+    groupExpensesByCategory,
 } from '../utils/clientDetailHelpers';
-import { ClientInvoice, InvoiceStatus } from '../types';
+import { ClientInvoice, ClientExpense, InvoiceStatus } from '../types';
 
 const mockInvoices: ClientInvoice[] = [
     {
@@ -285,5 +287,155 @@ describe('integration: invoice data flow', () => {
         // Verify formatting
         expect(formatCurrency(total)).toBe('$9,000.00');
         expect(formatCurrency(paidData?.value ?? 0)).toBe('$7,500.00');
+    });
+});
+
+// Expense helper tests
+const mockExpenses: ClientExpense[] = [
+    {
+        id: 'expense-1',
+        amount: 150,
+        category: 'Office Supplies',
+        date: '2024-01-15',
+        description: 'Printer paper',
+        vendor: 'Staples',
+        created_at: '2024-01-15T10:00:00Z',
+        client_id: 'client-uuid-1',
+    },
+    {
+        id: 'expense-2',
+        amount: 500,
+        category: 'Software & Subscriptions',
+        date: '2024-02-01',
+        description: 'Annual license',
+        vendor: 'Adobe',
+        created_at: '2024-02-01T10:00:00Z',
+        client_id: 'client-uuid-1',
+    },
+    {
+        id: 'expense-3',
+        amount: 75,
+        category: 'Office Supplies',
+        date: '2024-02-15',
+        description: 'Notebooks',
+        vendor: 'Amazon',
+        created_at: '2024-02-15T10:00:00Z',
+        client_id: 'client-uuid-1',
+    },
+    {
+        id: 'expense-4',
+        amount: 200,
+        category: 'Travel',
+        date: '2024-03-01',
+        description: 'Client meeting',
+        created_at: '2024-03-01T10:00:00Z',
+        client_id: 'client-uuid-1',
+    },
+];
+
+describe('calculateExpenseTotal', () => {
+    it('should return 0 for empty expenses', () => {
+        const result = calculateExpenseTotal([]);
+        expect(result).toBe(0);
+    });
+
+    it('should calculate total expense amount correctly', () => {
+        const result = calculateExpenseTotal(mockExpenses);
+        // 150 + 500 + 75 + 200 = 925
+        expect(result).toBe(925);
+    });
+
+    it('should handle single expense', () => {
+        const singleExpense: ClientExpense[] = [
+            {
+                id: 'expense-1',
+                amount: 99.99,
+                category: 'Other',
+                date: '2024-01-01',
+                created_at: '2024-01-01T10:00:00Z',
+            },
+        ];
+        const result = calculateExpenseTotal(singleExpense);
+        expect(result).toBe(99.99);
+    });
+});
+
+describe('groupExpensesByCategory', () => {
+    it('should return empty array for no expenses', () => {
+        const result = groupExpensesByCategory([]);
+        expect(result).toHaveLength(0);
+    });
+
+    it('should group expenses by category and sum amounts', () => {
+        const result = groupExpensesByCategory(mockExpenses);
+
+        // Should have 3 categories: Office Supplies, Software & Subscriptions, Travel
+        expect(result).toHaveLength(3);
+
+        // Office Supplies: 150 + 75 = 225
+        const officeSupplies = result.find((r) => r.category === 'Office Supplies');
+        expect(officeSupplies?.total).toBe(225);
+
+        // Software & Subscriptions: 500
+        const software = result.find((r) => r.category === 'Software & Subscriptions');
+        expect(software?.total).toBe(500);
+
+        // Travel: 200
+        const travel = result.find((r) => r.category === 'Travel');
+        expect(travel?.total).toBe(200);
+    });
+
+    it('should sort results by total descending', () => {
+        const result = groupExpensesByCategory(mockExpenses);
+
+        // Software (500) should be first, then Office Supplies (225), then Travel (200)
+        expect(result[0].category).toBe('Software & Subscriptions');
+        expect(result[0].total).toBe(500);
+        expect(result[1].category).toBe('Office Supplies');
+        expect(result[1].total).toBe(225);
+        expect(result[2].category).toBe('Travel');
+        expect(result[2].total).toBe(200);
+    });
+
+    it('should handle single category', () => {
+        const singleCategoryExpenses: ClientExpense[] = [
+            {
+                id: 'e1',
+                amount: 100,
+                category: 'Travel',
+                date: '2024-01-01',
+                created_at: '2024-01-01T00:00:00Z',
+            },
+            {
+                id: 'e2',
+                amount: 200,
+                category: 'Travel',
+                date: '2024-01-02',
+                created_at: '2024-01-02T00:00:00Z',
+            },
+        ];
+
+        const result = groupExpensesByCategory(singleCategoryExpenses);
+        expect(result).toHaveLength(1);
+        expect(result[0].category).toBe('Travel');
+        expect(result[0].total).toBe(300);
+    });
+});
+
+describe('integration: expense data flow', () => {
+    it('should correctly process a typical client expense history', () => {
+        // Calculate total
+        const total = calculateExpenseTotal(mockExpenses);
+        expect(total).toBe(925);
+
+        // Group by category
+        const byCategory = groupExpensesByCategory(mockExpenses);
+        expect(byCategory).toHaveLength(3);
+
+        // Verify the highest category
+        expect(byCategory[0].category).toBe('Software & Subscriptions');
+
+        // Verify formatting
+        expect(formatCurrency(total)).toBe('$925.00');
     });
 });

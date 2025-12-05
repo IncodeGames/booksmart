@@ -70,6 +70,23 @@ export interface ClientInvoice {
     issued_date: string;
 }
 
+export interface ClientExpense {
+    id: string;  // UUID in database
+    amount: number;
+    description?: string;
+    category: string;
+    date: string;
+    vendor?: string;
+    payment_method?: string;
+    created_at: string;
+    client_id?: string;
+}
+
+export enum ClientDetailTab {
+    Invoices = 'invoices',
+    Expenses = 'expenses',
+}
+
 export interface InvoiceChartData {
     name: string;
     value: number;

@@ -63,6 +63,8 @@ const ExpensesPage = () => {
     const handleAddExpense = async (expenseData: Omit<Expense, 'id' | 'created_at'>) => {
         try {
             // TODO: Add user_id from auth context
+            const response = await supabase.auth.getUser();
+            expenseData.user_id = response?.data?.user?.id;
             const { data, error } = await supabase
                 .from('expenses')
                 .insert([expenseData])
@@ -117,7 +119,7 @@ const ExpensesPage = () => {
                     <div className="header-left">
                         <h1>Expenses</h1>
                     </div>
-                    
+
                     <div className="header-right">
                         <button
                             className="create-expense-btn"

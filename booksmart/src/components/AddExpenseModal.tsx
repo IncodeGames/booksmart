@@ -1,12 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Expense } from '../types';
 import { X } from 'lucide-react';
 import './styles/AddExpenseModal.css';
+
+interface ClientOption {
+    id: string;
+    name: string;
+    company?: string;
+}
 
 interface AddExpenseModalProps {
     isOpen: boolean;
     onClose: () => void;
     onSubmit: (expense: Omit<Expense, 'id' | 'created_at'>) => Promise<boolean>;
+    clients?: ClientOption[];
+    preselectedClientId?: string;
 }
 
 const EXPENSE_CATEGORIES = [
@@ -33,7 +41,13 @@ const PAYMENT_METHODS = [
     'Other',
 ];
 
-const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClose, onSubmit }) => {
+const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
+    isOpen,
+    onClose,
+    onSubmit,
+    clients = [],
+    preselectedClientId,
+}) => {
     const [formData, setFormData] = useState({
         category: '',
         amount: '',
@@ -41,9 +55,17 @@ const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClose, onSu
         date: new Date().toISOString().split('T')[0],
         vendor: '',
         payment_method: '',
+        client_id: '',
     });
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [submitting, setSubmitting] = useState(false);
+
+    // Set preselected client when modal opens
+    useEffect(() => {
+        if (isOpen && preselectedClientId) {
+            setFormData((prev) => ({ ...prev, client_id: preselectedClientId }));
+        }
+    }, [isOpen, preselectedClientId]);
 
     const handleChange = (
         e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -91,6 +113,7 @@ const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClose, onSu
             date: formData.date,
             vendor: formData.vendor || undefined,
             payment_method: formData.payment_method || undefined,
+            client_id: formData.client_id || undefined,
         };
 
         const success = await onSubmit(expenseData);
@@ -98,7 +121,7 @@ const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClose, onSu
         setSubmitting(false);
 
         if (success) {
-            // Reset form
+            // Reset form (keep client_id if preselected)
             setFormData({
                 category: '',
                 amount: '',
@@ -106,6 +129,7 @@ const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClose, onSu
                 date: new Date().toISOString().split('T')[0],
                 vendor: '',
                 payment_method: '',
+                client_id: preselectedClientId || '',
             });
             setErrors({});
         }
@@ -134,6 +158,27 @@ const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClose, onSu
                 </div>
 
                 <form onSubmit={handleSubmit} className="expense-form">
+                    {clients.length > 0 && (
+                        <div className="form-group">
+                            <label htmlFor="client_id">Client</label>
+                            <select
+                                id="client_id"
+                                name="client_id"
+                                value={formData.client_id}
+                                onChange={handleChange}
+                                disabled={!!preselectedClientId}
+                            >
+                                <option value="">No client (general expense)</option>
+                                {clients.map((client) => (
+                                    <option key={client.id} value={client.id}>
+                                        {client.name}
+                                        {client.company ? ` (${client.company})` : ''}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
+
                     <div className="form-row">
                         <div className="form-group">
                             <label htmlFor="category">

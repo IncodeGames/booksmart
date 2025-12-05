@@ -1,4 +1,4 @@
-import { ClientInvoice, InvoiceStatus, InvoiceChartData } from '../types';
+import { ClientInvoice, ClientExpense, InvoiceStatus, InvoiceChartData } from '../types';
 
 const CHART_COLORS: Record<string, string> = {
     paid: '#22c55e',
@@ -86,4 +86,29 @@ export function getStatusClass(status: InvoiceStatus): string {
         default:
             return '';
     }
+}
+
+/**
+ * Calculates total expense amount from a list of expenses
+ */
+export function calculateExpenseTotal(expenses: ClientExpense[]): number {
+    return expenses.reduce((sum, exp) => sum + exp.amount, 0);
+}
+
+/**
+ * Groups expenses by category and returns totals
+ */
+export function groupExpensesByCategory(
+    expenses: ClientExpense[]
+): { category: string; total: number }[] {
+    const categoryMap = new Map<string, number>();
+
+    for (const expense of expenses) {
+        const current = categoryMap.get(expense.category) || 0;
+        categoryMap.set(expense.category, current + expense.amount);
+    }
+
+    return Array.from(categoryMap.entries())
+        .map(([category, total]) => ({ category, total }))
+        .sort((a, b) => b.total - a.total);
 }

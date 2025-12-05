@@ -14,6 +14,7 @@ interface CreateInvoiceProps {
     onSignOut: () => void;
     onBack?: () => void;
     invoiceToEdit?: any; // For editing existing draft invoices
+    preselectedClientId?: string; // Pre-select a client when creating from client details
 }
 
 interface Client {
@@ -47,7 +48,7 @@ interface InvoiceData {
     status: 'draft' | 'sent' | 'paid';
 }
 
-const CreateInvoice = ({ user, onSignOut, onBack, invoiceToEdit }: CreateInvoiceProps) => {
+const CreateInvoice = ({ user, onSignOut, onBack, invoiceToEdit, preselectedClientId }: CreateInvoiceProps) => {
     const navigate = useNavigate();
     const [clients, setClients] = useState<Client[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
@@ -94,6 +95,10 @@ const CreateInvoice = ({ user, onSignOut, onBack, invoiceToEdit }: CreateInvoice
             loadInvoiceForEdit();
         } else {
             generateInvoiceNumber();
+            // Set preselected client if provided
+            if (preselectedClientId) {
+                setInvoiceData(prev => ({ ...prev, client_id: preselectedClientId }));
+            }
         }
     }, []);
 
